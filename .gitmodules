@@ -1,7 +1,3 @@
 [submodule "submodules/btcpayserver"]
 	path = submodules/btcpayserver
 	url = https://github.com/btcpayserver/btcpayserver
-[submodule "submodules/strike-client"]
-	path = submodules/strike-client
-	url = https://github.com/rockstardev/strike-client
-	branch = prerelease

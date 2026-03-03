@@ -20,4 +20,4 @@ These transaction counter are displayed on a public facing url
 
 ## License
 
-https://github.com/rockstardev/BTCPayServerPlugins.RockstarDev/blob/master/LICENSE
+https://github.com/teamssUTXO/BTCPayServerPlugins.teamssUTXO/blob/master/LICENSE

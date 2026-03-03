@@ -1,1 +1,0 @@
-dotnet ef migrations add RenameToFeeBlockTarget -p Plugins/BTCPayServer.RockstarDev.Plugins.WalletSweeper -c PluginDbContext -o Data/Migrations
