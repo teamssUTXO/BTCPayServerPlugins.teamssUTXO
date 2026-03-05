@@ -15,6 +15,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
+// CRUD des checks
+// liste tous les checks
+// formulaire création d'un check + sauvegarde un check
+// formulaire édition d'un check + mise à jour du check
+// supprime un check
+
 [Route("server/stores/uptimechecker")]
 [Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
 public class UptimeCheckerController(

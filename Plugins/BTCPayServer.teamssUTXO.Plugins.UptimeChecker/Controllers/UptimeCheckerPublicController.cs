@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
+// Affiche l'état de tous les checks (up/down)
+
 [AllowAnonymous]
 [Route("uptimechecker/")]
 public class UptimeCheckerPublicController(
@@ -75,11 +77,6 @@ public class UptimeCheckerPublicController(
             count = transactionResult.TransactionCount,
             volumeByCurrency = transactionResult.VolumeByCurrency
         });
-    }
-
-    private Task<InvoiceTransactionResult> InvoiceTransactionQuery(UptimeCheckerSettings model)
-    {
-        return uptimeCheckerService.GetTransactionCountAsync(model);
     }
 
     private async Task<IActionResult> ValidatePassword(UptimeCheckerSettings model, string password)
