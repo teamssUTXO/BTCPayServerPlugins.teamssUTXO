@@ -36,4 +36,8 @@
         <EmbeddedResource Include="Views\Shared\HistoricalTemplates\default.html" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="MailKit" Version="4.15.1" />
+    </ItemGroup>
+
 </Project>

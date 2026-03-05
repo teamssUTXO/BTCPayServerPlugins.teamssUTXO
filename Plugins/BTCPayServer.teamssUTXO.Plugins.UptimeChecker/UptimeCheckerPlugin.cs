@@ -16,6 +16,7 @@ public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
     {
         services.AddUIExtension("store-integrations-nav", "UptimeCheckerNav");
         services.AddSingleton<UptimeCheckerService>();
+        services.AddSingleton<EmailService>();
         base.Execute(services);
     }
 }
