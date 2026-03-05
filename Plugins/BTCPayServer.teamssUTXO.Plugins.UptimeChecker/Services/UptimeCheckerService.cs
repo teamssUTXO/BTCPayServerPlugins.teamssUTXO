@@ -15,7 +15,7 @@ using InvoiceData = BTCPayServer.Data.InvoiceData;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 
-public class TxCounterService
+public class UptimeCheckerService
 {
     // Static cache variables
     private static InvoiceTransactionResult _cachedTransactionCount;
@@ -25,7 +25,7 @@ public class TxCounterService
     private readonly CurrencyNameTable _currencyNameTable;
     private readonly ApplicationDbContextFactory _applicationDbContextFactory;
 
-    public TxCounterService(
+    public UptimeCheckerService(
         StoreRepository storeRepository,
         CurrencyNameTable currencyNameTable,
         ApplicationDbContextFactory applicationDbContextFactory)
@@ -35,13 +35,13 @@ public class TxCounterService
         _applicationDbContextFactory = applicationDbContextFactory;
     }
 
-    public async Task<InvoiceTransactionResult> GetTransactionCountAsync(CounterPluginSettings model)
+    public async Task<InvoiceTransactionResult> GetTransactionCountAsync(UptimeCheckerSettings model)
     {
         // Check if we can use cached value
         var now = DateTime.UtcNow;
         if (now - _lastFetchTime < _cacheExpiration)
             return _cachedTransactionCount;
-        
+
         // updating the cache
         _cachedTransactionCount = await FetchAndCacheTransactionCount(model);
         _lastFetchTime = DateTime.UtcNow;
@@ -49,7 +49,7 @@ public class TxCounterService
         return _cachedTransactionCount;
     }
 
-    private async Task<InvoiceTransactionResult> FetchAndCacheTransactionCount(CounterPluginSettings model)
+    private async Task<InvoiceTransactionResult> FetchAndCacheTransactionCount(UptimeCheckerSettings model)
     {
         var stores = await _storeRepository.GetStores();
         var allStoreIds = stores.Where(c => !c.Archived).Select(s => s.Id).ToArray();
@@ -101,7 +101,7 @@ public class TxCounterService
         return result;
     }
 
-    private InvoiceTransactionResult CalculateExtraTransactionCount(CounterPluginSettings model)
+    private InvoiceTransactionResult CalculateExtraTransactionCount(UptimeCheckerSettings model)
     {
         var result = new InvoiceTransactionResult
         {
@@ -113,7 +113,7 @@ public class TxCounterService
         try
         {
             var now = DateTime.UtcNow;
-            var extraTransaction = JsonConvert.DeserializeObject<List<ExtraTransactionEntry>>(model.ExtraTransactions) ?? 
+            var extraTransaction = JsonConvert.DeserializeObject<List<ExtraTransactionEntry>>(model.ExtraTransactions) ??
                                    new List<ExtraTransactionEntry>();
             foreach (var txn in extraTransaction)
             {

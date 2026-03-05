@@ -1,4 +1,4 @@
-﻿@using BTCPayServer.Abstractions.Contracts
+@using BTCPayServer.Abstractions.Contracts
 @using BTCPayServer.Abstractions.Extensions
 @using BTCPayServer.Data
 @using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
@@ -11,11 +11,11 @@
 @if (SignInManager.IsSignedIn(User) && !string.IsNullOrEmpty(storeId))
 {
     <li class="nav-item">
-        <a class="nav-link @ViewData.ActivePageClass(PluginNavPages.Counter)"
-           asp-action="CounterConfig"
-           asp-controller="TransactionCounter">
+        <a class="nav-link @ViewData.ActivePageClass(PluginNavPages.UptimeChecker)"
+           asp-action="Config"
+           asp-controller="UptimeChecker">
             <span class="me-2"></span>
-            <span>Transaction Counter</span>
+            <span>Uptime Checker</span>
         </a>
     </li>
 }

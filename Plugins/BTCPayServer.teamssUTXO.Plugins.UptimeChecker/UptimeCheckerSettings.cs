@@ -2,7 +2,7 @@ using System;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker;
 
-public class CounterPluginSettings
+public class UptimeCheckerSettings
 {
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }

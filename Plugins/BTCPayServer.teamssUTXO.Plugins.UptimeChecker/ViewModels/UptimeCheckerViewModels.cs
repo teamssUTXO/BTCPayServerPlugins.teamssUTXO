@@ -1,14 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using BTCPayServer.Data;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 
-public class CounterConfigViewModel
+public class UptimeCheckerConfigViewModel
 {
     [Display(Name = "Start Date")]
     public DateTime StartDate { get; set; }
@@ -16,7 +13,7 @@ public class CounterConfigViewModel
     [Display(Name = "End Date")]
     public DateTime? EndDate { get; set; }
 
-    [Display(Name = "Enable transaction counter configuration")]
+    [Display(Name = "Enable uptime checker")]
     public bool Enabled { get; set; }
 
     [Display(Name = "Include archived invoices")]
@@ -37,15 +34,7 @@ public class CounterConfigViewModel
     public string ExcludedStoreIds { get; set; }
 }
 
-public class ExtraTransactionEntry
-{
-    public string Source { get; set; }
-    public DateTime Start { get; set; }
-    public DateTime End { get; set; }
-    public int Count { get; set; }
-}
-
-public class CounterViewModel : BaseCounterPublicViewModel
+public class UptimeCheckerPublicViewModel : UptimeCheckerBasePublicViewModel
 {
     public string HtmlTemplate { get; set; }
     public int InitialCount { get; set; }

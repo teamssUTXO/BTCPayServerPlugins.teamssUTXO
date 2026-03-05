@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker;
 
-public class CounterPlugin : BaseBTCPayServerPlugin
+public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
 {
     public override IBTCPayServerPlugin.PluginDependency[] Dependencies { get; } =
     [
@@ -14,8 +14,8 @@ public class CounterPlugin : BaseBTCPayServerPlugin
 
     public override void Execute(IServiceCollection services)
     {
-        services.AddUIExtension("store-integrations-nav", "PluginCounterNav");
-        services.AddSingleton<TxCounterService>();
+        services.AddUIExtension("store-integrations-nav", "UptimeCheckerNav");
+        services.AddSingleton<UptimeCheckerService>();
         base.Execute(services);
     }
 }

@@ -15,9 +15,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
-[Route("server/stores/counter")]
+[Route("server/stores/uptimechecker")]
 [Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
-public class TransactionCounterController(
+public class UptimeCheckerController(
     StoreRepository storeRepository,
     SettingsRepository settingsRepository,
     UserManager<ApplicationUser> userManager) : Controller
@@ -31,12 +31,12 @@ public class TransactionCounterController(
     }
 
     [HttpGet]
-    public async Task<IActionResult> CounterConfig()
+    public async Task<IActionResult> Config()
     {
         var stores = await storeRepository.GetStores();
         stores = stores.Where(c => !c.Archived).ToArray();
-        var model = await settingsRepository.GetSettingAsync<CounterPluginSettings>() ?? new();
-        var vm = new CounterConfigViewModel
+        var model = await settingsRepository.GetSettingAsync<UptimeCheckerSettings>() ?? new();
+        var vm = new UptimeCheckerConfigViewModel
         {
             StartDate = model.StartDate,
             EndDate = model.EndDate,
@@ -53,7 +53,7 @@ public class TransactionCounterController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> CounterConfig(CounterConfigViewModel viewModel)
+    public async Task<IActionResult> Config(UptimeCheckerConfigViewModel viewModel)
     {
         if (string.IsNullOrEmpty(viewModel.HtmlTemplate))
         {
@@ -62,10 +62,10 @@ public class TransactionCounterController(
                 Message = "HTML Template cannot be empty.",
                 Severity = StatusMessageModel.StatusSeverity.Error
             });
-            return RedirectToAction(nameof(CounterConfig));
+            return RedirectToAction(nameof(Config));
         }
 
-        var settings = new CounterPluginSettings
+        var settings = new UptimeCheckerSettings
         {
             HtmlTemplate = viewModel.HtmlTemplate,
             StartDate = viewModel.StartDate,
@@ -79,8 +79,8 @@ public class TransactionCounterController(
             ExcludedStoreIds = viewModel.ExcludedStoreIds
         };
         await settingsRepository.UpdateSetting(settings);
-        TempData[WellKnownTempData.SuccessMessage] = "Plugin counter configuration updated successfully";
-        return RedirectToAction(nameof(CounterConfig));
+        TempData[WellKnownTempData.SuccessMessage] = "Uptime Checker configuration updated successfully";
+        return RedirectToAction(nameof(Config));
     }
 
     private string GetUserId() => userManager.GetUserId(User);

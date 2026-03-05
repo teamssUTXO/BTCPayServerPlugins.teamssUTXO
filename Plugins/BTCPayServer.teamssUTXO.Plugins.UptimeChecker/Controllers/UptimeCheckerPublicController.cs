@@ -13,17 +13,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
 [AllowAnonymous]
-[Route("txcounter/")]
-public class PublicCounterController(
+[Route("uptimechecker/")]
+public class UptimeCheckerPublicController(
     UriResolver uriResolver,
     StoreRepository storeRepo,
     SettingsRepository settingsRepository,
-    TxCounterService transactionCounter) : Controller
+    UptimeCheckerService uptimeCheckerService) : Controller
 {
     [HttpGet("html")]
     public async Task<IActionResult> Counter([FromQuery] string password)
     {
-        var model = await settingsRepository.GetSettingAsync<CounterPluginSettings>() ?? new CounterPluginSettings();
+        var model = await settingsRepository.GetSettingAsync<UptimeCheckerSettings>() ?? new UptimeCheckerSettings();
         if (!model.Enabled)
             return NotFound();
 
@@ -41,14 +41,14 @@ public class PublicCounterController(
             return BadRequest("Invalid HTML template, or missing {COUNTER} placeholder. If you updated plugin version, make sure to update the HTML template as well.");
 
         var invoiceTransactions = await InvoiceTransactionQuery(model);
-        var viewModel = new CounterViewModel {
+        var viewModel = new UptimeCheckerPublicViewModel
+        {
             HtmlTemplate = model.HtmlTemplate,
             InitialCount = invoiceTransactions.TransactionCount,
             InitialVolumeByCurrency = invoiceTransactions.VolumeByCurrency
         };
         return View(viewModel);
     }
-
 
     [HttpGet("api")]
     public async Task<IActionResult> ApiCounter([FromQuery] string password)
@@ -58,7 +58,7 @@ public class PublicCounterController(
         Response.Headers.Append("Access-Control-Allow-Headers", "*");
         Response.Headers.Append("Access-Control-Allow-Methods", "GET");
 
-        var model = await settingsRepository.GetSettingAsync<CounterPluginSettings>() ?? new CounterPluginSettings();
+        var model = await settingsRepository.GetSettingAsync<UptimeCheckerSettings>() ?? new UptimeCheckerSettings();
         if (!model.Enabled)
             return NotFound();
 
@@ -77,19 +77,18 @@ public class PublicCounterController(
         });
     }
 
-    private Task<InvoiceTransactionResult> InvoiceTransactionQuery(CounterPluginSettings model)
+    private Task<InvoiceTransactionResult> InvoiceTransactionQuery(UptimeCheckerSettings model)
     {
-        return transactionCounter.GetTransactionCountAsync(model);
+        return uptimeCheckerService.GetTransactionCountAsync(model);
     }
 
-
-    private async Task<IActionResult> ValidatePassword(CounterPluginSettings model, string password)
+    private async Task<IActionResult> ValidatePassword(UptimeCheckerSettings model, string password)
     {
         if (string.IsNullOrEmpty(password) || password != model.Password)
         {
             var adminStores = await storeRepo.GetStoresByUserId(model.AdminUserId);
             var storeData = adminStores[0];
-            var publicModel = new BaseCounterPublicViewModel
+            var publicModel = new UptimeCheckerBasePublicViewModel
             {
                 StoreId = storeData.Id,
                 StoreName = storeData?.StoreName,

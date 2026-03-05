@@ -1,8 +1,8 @@
-﻿using BTCPayServer.Models;
+using BTCPayServer.Models;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 
-public class BaseCounterPublicViewModel
+public class UptimeCheckerBasePublicViewModel
 {
     public string StoreId { get; set; }
     public string StoreName { get; set; }
