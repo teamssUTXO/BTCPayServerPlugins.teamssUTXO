@@ -18,4 +18,8 @@ public class UptimeCheck
     public List<string> NotificationEmails { get; set; } = new();
 
     public UptimeCheckResult? LastResult { get; set; }
+
+    public bool? LastKnownIsUp { get; set; }
+
+    public DateTimeOffset NextCheckAt { get; set; } = DateTimeOffset.UtcNow;
 }

@@ -10,11 +10,11 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 /// <summary>
 /// Sends alert e-mails on status transitions (up → down, down → up).
 /// </summary>
-public class EmailService
+public class SendEmailService
 {
     private readonly EmailSenderFactory _emailSenderFactory;
 
-    public EmailService(EmailSenderFactory emailSenderFactory)
+    public SendEmailService(EmailSenderFactory emailSenderFactory)
     {
         _emailSenderFactory = emailSenderFactory;
     }
@@ -22,7 +22,7 @@ public class EmailService
     /// <summary>
     /// Sends a "service is DOWN" alert
     /// </summary>
-    public async Task SendMailDown(UptimeCheck check, UptimeCheckResult result)
+    public async Task SendMailDownAsync(UptimeCheck check, UptimeCheckResult result)
     {
         if (check.NotificationEmails == null || check.NotificationEmails.Count == 0)
             return;
