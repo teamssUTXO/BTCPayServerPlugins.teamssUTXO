@@ -1,5 +1,4 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
 VisualStudioVersion = 17.8.34309.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BTCPayServer", "submodules\btcpayserver\BTCPayServer\BTCPayServer.csproj", "{B19C9F52-DC47-466D-8B5C-2D202B7B003F}"
@@ -28,6 +27,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BTCPayServer.Plugins.Tests", "BTCPayServer.Plugins.Tests\BTCPayServer.Plugins.Tests.csproj", "{C6E671F6-5417-4F2F-A5A2-0A7D307BA1F7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BTCPayServer.RockstarDev.Plugins.TransactionCounter", "Plugins\BTCPayServer.RockstarDev.Plugins.TransactionCounter\BTCPayServer.RockstarDev.Plugins.TransactionCounter.csproj", "{2BD60D68-B2EB-4DCA-954F-7C81C49F4A2D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BTCPayServer.teamssUTXO.Plugins.UptimeChecker", "Plugins\BTCPayServer.teamssUTXO.Plugins.UptimeChecker\BTCPayServer.teamssUTXO.Plugins.UptimeChecker.csproj", "{E14F7BF3-4050-4A06-BFA8-11C25457CB95}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{07D57EEB-2F50-60C4-C011-FE4FA775C9A8}"
 EndProject
@@ -311,6 +312,30 @@ Global
 		{2BD60D68-B2EB-4DCA-954F-7C81C49F4A2D}.Release|x64.Build.0 = Release|Any CPU
 		{2BD60D68-B2EB-4DCA-954F-7C81C49F4A2D}.Release|x86.ActiveCfg = Release|Any CPU
 		{2BD60D68-B2EB-4DCA-954F-7C81C49F4A2D}.Release|x86.Build.0 = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Debug|x64.ActiveCfg = Altcoins-Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Debug|x64.Build.0 = Altcoins-Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Debug|x86.ActiveCfg = Altcoins-Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Debug|x86.Build.0 = Altcoins-Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Release|Any CPU.Build.0 = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Release|x64.ActiveCfg = Altcoins-Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Release|x64.Build.0 = Altcoins-Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Release|x86.ActiveCfg = Altcoins-Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Altcoins-Release|x86.Build.0 = Altcoins-Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Debug|x64.Build.0 = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Debug|x86.Build.0 = Debug|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Release|x64.ActiveCfg = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Release|x64.Build.0 = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Release|x86.ActiveCfg = Release|Any CPU
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -324,6 +349,7 @@ Global
 		{3F2E0BA0-9EA7-490F-894D-F9703F35B174} = {9E04ECE9-E304-4FF2-9CBC-83256E6C6962}
 		{4146B6DF-7BEE-4BD0-B6B1-77E7630A1B81} = {9E04ECE9-E304-4FF2-9CBC-83256E6C6962}
 		{2BD60D68-B2EB-4DCA-954F-7C81C49F4A2D} = {07D57EEB-2F50-60C4-C011-FE4FA775C9A8}
+		{E14F7BF3-4050-4A06-BFA8-11C25457CB95} = {07D57EEB-2F50-60C4-C011-FE4FA775C9A8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {45AEBD16-6568-4956-9D05-B33C33712DE3}
