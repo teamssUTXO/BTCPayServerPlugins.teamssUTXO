@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using BTCPayServer.Data;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter.ViewModels;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 
 public class CounterConfigViewModel
 {

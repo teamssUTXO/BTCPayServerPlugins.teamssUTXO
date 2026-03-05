@@ -2,15 +2,15 @@ using System;
 using System.Threading.Tasks;
 using BTCPayServer.Data;
 using BTCPayServer.Models;
-using BTCPayServer.RockstarDev.Plugins.TransactionCounter.Services;
-using BTCPayServer.RockstarDev.Plugins.TransactionCounter.ViewModels;
+using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
+using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 using BTCPayServer.Services;
 using BTCPayServer.Services.Stores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter.Controllers;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
 [AllowAnonymous]
 [Route("txcounter/")]
@@ -41,10 +41,10 @@ public class PublicCounterController(
             return BadRequest("Invalid HTML template, or missing {COUNTER} placeholder. If you updated plugin version, make sure to update the HTML template as well.");
 
         var invoiceTransactions = await InvoiceTransactionQuery(model);
-        var viewModel = new CounterViewModel { 
-            HtmlTemplate = model.HtmlTemplate, 
-            InitialCount = invoiceTransactions.TransactionCount, 
-            InitialVolumeByCurrency = invoiceTransactions.VolumeByCurrency 
+        var viewModel = new CounterViewModel {
+            HtmlTemplate = model.HtmlTemplate,
+            InitialCount = invoiceTransactions.TransactionCount,
+            InitialVolumeByCurrency = invoiceTransactions.VolumeByCurrency
         };
         return View(viewModel);
     }

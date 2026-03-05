@@ -1,8 +1,8 @@
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter.ViewModels;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 
 public static class HtmlTemplates
 {

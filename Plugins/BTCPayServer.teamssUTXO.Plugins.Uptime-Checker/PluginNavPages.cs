@@ -1,4 +1,4 @@
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker;
 
 public enum PluginNavPages
 {

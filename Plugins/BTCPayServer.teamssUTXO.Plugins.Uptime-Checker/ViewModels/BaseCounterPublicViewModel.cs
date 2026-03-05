@@ -1,6 +1,6 @@
-using BTCPayServer.Models;
+﻿using BTCPayServer.Models;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter.ViewModels;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 
 public class BaseCounterPublicViewModel
 {

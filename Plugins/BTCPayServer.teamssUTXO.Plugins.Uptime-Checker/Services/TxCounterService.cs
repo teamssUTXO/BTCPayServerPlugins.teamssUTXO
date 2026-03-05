@@ -13,7 +13,7 @@ using NBXplorer.Models;
 using Newtonsoft.Json;
 using InvoiceData = BTCPayServer.Data.InvoiceData;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter.Services;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 
 public class TxCounterService
 {

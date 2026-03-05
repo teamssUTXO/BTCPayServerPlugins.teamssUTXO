@@ -1,6 +1,6 @@
 using System;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker;
 
 public class CounterPluginSettings
 {

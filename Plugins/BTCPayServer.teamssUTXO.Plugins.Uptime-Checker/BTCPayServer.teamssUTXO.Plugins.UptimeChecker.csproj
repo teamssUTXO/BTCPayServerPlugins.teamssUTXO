@@ -8,9 +8,9 @@
     <!-- -->
     <!-- Plugin specific properties -->
     <PropertyGroup>
-        <Product>Transaction Counter</Product>
-        <Description>This plugin gives server admin a view of the total transaction count done across store instance</Description>
-        <Version>1.0.4</Version>
+        <Product>Uptime Checker</Product>
+        <Description>This plugin gives server admin a view of the uptime status across store instances</Description>
+        <Version>1.0.0</Version>
     </PropertyGroup>
     <!-- Plugin development properties -->
     <PropertyGroup>
@@ -36,7 +36,4 @@
         <EmbeddedResource Include="Views\Shared\HistoricalTemplates\default.html" />
     </ItemGroup>
 
-    <ItemGroup>
-        <Folder Include="Views\TransactionCounter\"/>
-    </ItemGroup>
 </Project>

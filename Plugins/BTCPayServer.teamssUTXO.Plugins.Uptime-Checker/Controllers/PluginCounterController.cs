@@ -6,14 +6,14 @@ using BTCPayServer.Abstractions.Extensions;
 using BTCPayServer.Abstractions.Models;
 using BTCPayServer.Client;
 using BTCPayServer.Data;
-using BTCPayServer.RockstarDev.Plugins.TransactionCounter.ViewModels;
+using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 using BTCPayServer.Services;
 using BTCPayServer.Services.Stores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter.Controllers;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
 [Route("server/stores/counter")]
 [Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]

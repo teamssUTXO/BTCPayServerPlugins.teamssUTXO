@@ -1,9 +1,9 @@
 using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Abstractions.Models;
-using BTCPayServer.RockstarDev.Plugins.TransactionCounter.Services;
+using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BTCPayServer.RockstarDev.Plugins.TransactionCounter;
+namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker;
 
 public class CounterPlugin : BaseBTCPayServerPlugin
 {
