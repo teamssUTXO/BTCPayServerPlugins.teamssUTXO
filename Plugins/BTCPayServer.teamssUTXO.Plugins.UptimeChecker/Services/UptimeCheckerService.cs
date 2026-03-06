@@ -14,11 +14,11 @@ public class UptimeCheckerService : IHostedService, IDisposable
     private readonly SendEmailService _sendEmailService;
     private readonly IHttpClientFactory _httpClientFactory;
 
-    private readonly List<UptimeCheck> _checks = new(); // TODO : ??
+    private readonly List<UptimeCheck> _checks = new(); // TODO : à remplacer par une intégration à la BDD de BTCPay Server
     private readonly SemaphoreSlim _checksLock = new(1, 1);
 
     private CancellationTokenSource? _cts;
-    private Task? _loopTask; // TODO : ??
+    private Task? _loopTask;
 
     private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(20);
 
@@ -149,7 +149,11 @@ public class UptimeCheckerService : IHostedService, IDisposable
         }
     }
 
-    private async Task RunDueChecksAsync(CancellationToken ct) // TODO : ??
+    /// <summary>
+    /// Determines which checks are currently due based on their scheduled date.
+    /// </summary>
+    /// <param name="ct"></param>
+    private async Task RunDueChecksAsync(CancellationToken ct)
     {
         List<UptimeCheck> snapshot;
 
@@ -195,7 +199,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
             live.LastResult = result;
             live.LastKnownIsUp = result.IsUp;
-            live.NextCheckAt = DateTimeOffset.UtcNow.AddMinutes(live.IntervalMinutes); // TODO : ça veut dire que le prochain check ce fera dans 20secs ? Et du coup il faut définir ça autrement
+            live.NextCheckAt = DateTimeOffset.UtcNow.AddMinutes(live.IntervalMinutes);
         }
         finally
         {
@@ -216,7 +220,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
         }
     }
 
-    public void Dispose() // TODO : pourquoi implémenter un dispose si déjà IDisposable fait le taff
+    public void Dispose()
     {
         _cts?.Dispose();
         _checksLock.Dispose();

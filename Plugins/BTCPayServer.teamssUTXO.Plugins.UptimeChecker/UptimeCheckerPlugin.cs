@@ -17,7 +17,7 @@ public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
     {
         services.AddUIExtension("store-integrations-nav", "UptimeCheckerNav");
         services.AddSingleton<SendEmailService>();
-        // Register as singleton so controllers can inject it, and as hosted service so it runs in the background.
+        // Register as singleton so controllers can inject it, and as hosted service so it runs in the background
         services.AddSingleton<UptimeCheckerService>();
         services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<UptimeCheckerService>());
         base.Execute(services);
