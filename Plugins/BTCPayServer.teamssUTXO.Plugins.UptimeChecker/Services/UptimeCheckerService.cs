@@ -89,6 +89,12 @@ public class UptimeCheckerService : IHostedService, IDisposable
     }
 
     /// <summary>
+    /// Performs HTTP check against a raw URL string (to initialize the state of a check - UP/DOWN)
+    /// </summary>
+    public Task<UptimeCheckResult> CheckUrlAsync(string url, CancellationToken ct = default) =>
+        CheckUrlAsync(new UptimeCheck { Url = url }, ct);
+
+    /// <summary>
     /// Performs HTTP request
     /// </summary>
     public async Task<UptimeCheckResult> CheckUrlAsync(UptimeCheck check, CancellationToken ct = default)

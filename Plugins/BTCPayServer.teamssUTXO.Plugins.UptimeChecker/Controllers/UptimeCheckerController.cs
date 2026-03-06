@@ -29,4 +29,45 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) 
         var checks = await uptimeCheckerService.GetChecksAsync();
         return View(new UptimeCheckListViewModel { Checks = checks });
     }
+
+
+    [HttpGet("create")]
+    public IActionResult Create()
+    {
+        return View("Edit", new UptimeCheckFormViewModel());
+    }
+
+
+    [HttpPost("create")]
+    public async Task<IActionResult> Create(UptimeCheckFormViewModel vm)
+    {
+        if (!ModelState.IsValid)
+            return View("Edit", vm);
+
+        // Initialize the state of the checked URL
+        var initialResult = await uptimeCheckerService.CheckUrlAsync(vm.Url);
+
+        var check = new UptimeCheck
+        {
+            Url                = vm.Url,
+            IntervalMinutes    = vm.IntervalMinutes,
+            IsEnabled          = vm.IsEnabled,
+            NotificationEmails = ParseEmails(vm.NotificationEmailsRaw),
+            LastResult         = initialResult,
+            LastKnownIsUp      = initialResult.IsUp,
+            NextCheckAt        = DateTimeOffset.UtcNow.AddMinutes(vm.IntervalMinutes)
+        };
+
+        await uptimeCheckerService.AddOrUpdateCheckAsync(check);
+
+        TempData[WellKnownTempData.SuccessMessage] = $"Check for {check.Url} created successfully.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    private static System.Collections.Generic.List<string> ParseEmails(string raw) =>
+        (raw ?? string.Empty)
+            .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+            .Select(e => e.Trim())
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .ToList();
 }

@@ -6,36 +6,41 @@ using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 
-public class UptimeCheckerConfigViewModel
+public class UptimeCheckListViewModel
 {
-    [Display(Name = "Start Date")]
-    public DateTime StartDate { get; set; }
+    public IReadOnlyList<UptimeCheck> Checks { get; set; } = new List<UptimeCheck>();
+}
 
-    [Display(Name = "End Date")]
-    public DateTime? EndDate { get; set; }
+public class UptimeCheckFormViewModel
+{
+    public string? Id { get; set; }
 
-    [Display(Name = "Enable uptime checker")]
-    public bool Enabled { get; set; }
+    [Required]
+    [Display(Name = "URL to monitor")]
+    [Url(ErrorMessage = "Please enter a valid http:// or https:// URL.")]
+    public string Url { get; set; } = string.Empty;
 
-    [Display(Name = "Include archived invoices")]
-    public bool IncludeArchived { get; set; }
+    [Required]
+    [Range(1, 1440)]
+    [Display(Name = "Check interval (minutes)")]
+    public int IntervalMinutes { get; set; } = 5;
 
-    [Display(Name = "Include Transaction Volume Data (more expensive queries)")]
-    public bool IncludeTransactionVolume { get; set; }
+    [Display(Name = "Active")]
+    public bool IsEnabled { get; set; } = true;
 
-    public string? Password { get; set; }
-    public StoreData[] Stores { get; set; }
-
-    [Display(Name = "HTML Template")]
-    public string? HtmlTemplate { get; set; }
-
-    [Display(Name = "Custom Transactions")]
-    public string ExtraTransactions { get; set; }
-
-    public string ExcludedStoreIds { get; set; }
+    /// <summary>Comma-separated list of notification email addresses.</summary>
+    [Display(Name = "Notification emails (comma-separated)")]
+    public string NotificationEmailsRaw { get; set; } = string.Empty;
 }
 
 public class UptimeStatusViewModel
 {
     public IReadOnlyList<UptimeCheck> Checks { get; set; } = new List<UptimeCheck>();
+}
+
+public class UptimeCheckerPublicViewModel : UptimeCheckerBasePublicViewModel
+{
+    public string HtmlTemplate { get; set; } = string.Empty;
+    public int InitialCount { get; set; }
+    public Dictionary<string, decimal> InitialVolumeByCurrency { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }

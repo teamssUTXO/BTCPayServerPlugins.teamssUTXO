@@ -1,0 +1,91 @@
+@using BTCPayServer.Abstractions.Extensions
+@using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
+@model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.UptimeCheckListViewModel
+@{
+    Layout = "_Layout";
+    ViewData.SetActivePage(PluginNavPages.UptimeChecker, "Uptime Checker");
+}
+
+<div class="sticky-header d-flex align-items-center justify-content-between">
+    <h2>@ViewData["Title"]</h2>
+    <a asp-action="Create" class="btn btn-primary">Add check</a>
+</div>
+
+<partial name="_StatusMessage" />
+
+@if (!Model.Checks.Any())
+{
+    <p class="text-muted mt-4">No checks configured yet. Click <strong>Add check</strong> to get started.</p>
+}
+else
+{
+    <table class="table table-hover mt-4">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Interval</th>
+                <th>Status</th>
+                <th>Last checked</th>
+                <th>Active</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var check in Model.Checks)
+            {
+                var result = check.LastResult;
+                <tr>
+                    <td>
+                        <a href="@check.Url" target="_blank" rel="noopener">@check.Url</a>
+                    </td>
+                    <td>@check.IntervalMinutes min</td>
+                    <td>
+                        @if (result is null)
+                        {
+                            <span class="badge bg-secondary">Pending</span>
+                        }
+                        else if (result.IsUp)
+                        {
+                            <span class="badge bg-success">UP</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">DOWN</span>
+                            @if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                            {
+                                <small class="text-muted ms-1">@result.ErrorMessage</small>
+                            }
+                        }
+                    </td>
+                    <td>
+                        @if (result is not null)
+                        {
+                            <span title="@result.CheckedAt.ToString("u")">@result.CheckedAt.ToString("g")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (check.IsEnabled)
+                        {
+                            <span class="text-success">Yes</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <a asp-action="Edit" asp-route-id="@check.Id" class="btn btn-sm btn-secondary">Edit</a>
+                        <form asp-action="Delete" asp-route-id="@check.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete check for @check.Url?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
