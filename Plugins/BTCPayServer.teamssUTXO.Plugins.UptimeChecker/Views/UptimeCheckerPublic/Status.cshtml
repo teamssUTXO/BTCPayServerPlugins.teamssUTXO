@@ -1,0 +1,76 @@
+@model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.UptimeStatusViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Service Status</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
+        h1 { margin-bottom: 8px; }
+        p.subtitle { color: #666; margin-bottom: 32px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; }
+        th { font-size: .85rem; text-transform: uppercase; color: #6b7280; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: .8rem; font-weight: 600; }
+        .up   { background: #d1fae5; color: #065f46; }
+        .down { background: #fee2e2; color: #991b1b; }
+        .pending { background: #e5e7eb; color: #374151; }
+        small.error { color: #9ca3af; }
+    </style>
+</head>
+<body>
+    <h1>Service Status</h1>
+    <p class="subtitle">Current status of all monitored services.</p>
+
+    @if (!Model.Checks.Any())
+    {
+        <p>No services are being monitored yet.</p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Service</th>
+                    <th>Status</th>
+                    <th>HTTP</th>
+                    <th>Last checked</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var check in Model.Checks)
+                {
+                    var result = check.LastResult;
+                    <tr>
+                        <td>@check.Url</td>
+                        <td>
+                            @if (result is null)
+                            {
+                                <span class="badge pending">Pending</span>
+                            }
+                            else if (result.IsUp)
+                            {
+                                <span class="badge up">UP</span>
+                            }
+                            else
+                            {
+                                <span class="badge down">DOWN</span>
+                                @if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                                {
+                                    <br /><small class="error">@result.ErrorMessage</small>
+                                }
+                            }
+                        </td>
+                        <td>@(result?.HttpStatusCode?.ToString() ?? "—")</td>
+                        <td>@(result is not null ? result.CheckedAt.ToString("g") : "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</body>
+</html>

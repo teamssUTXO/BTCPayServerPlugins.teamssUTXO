@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using BTCPayServer.Data;
+using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 
@@ -34,9 +35,7 @@ public class UptimeCheckerConfigViewModel
     public string ExcludedStoreIds { get; set; }
 }
 
-public class UptimeCheckerPublicViewModel : UptimeCheckerBasePublicViewModel
+public class UptimeStatusViewModel
 {
-    public string HtmlTemplate { get; set; }
-    public int InitialCount { get; set; }
-    public Dictionary<string, decimal> InitialVolumeByCurrency { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public IReadOnlyList<UptimeCheck> Checks { get; set; } = new List<UptimeCheck>();
 }
