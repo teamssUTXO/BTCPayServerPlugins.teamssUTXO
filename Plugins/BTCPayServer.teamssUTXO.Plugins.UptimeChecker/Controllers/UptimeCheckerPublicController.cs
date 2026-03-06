@@ -14,8 +14,6 @@ public class UptimeCheckerPublicController(UptimeCheckerService uptimeCheckerSer
     public async Task<IActionResult> Status()
     {
         var checks = await uptimeCheckerService.GetChecksAsync();
-
-        var vm = new UptimeStatusViewModel { Checks = checks };
-        return View(vm);
+        return View(new UptimeStatusViewModel { Checks = checks });
     }
 }
