@@ -1,0 +1,45 @@
+@using BTCPayServer.Abstractions.Extensions
+@using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
+@model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.UptimeCheckFormViewModel
+@{
+    Layout = "_Layout";
+    var isEdit = Model.Id is not null;
+    ViewData.SetActivePage(PluginNavPages.UptimeChecker, isEdit ? "Edit check" : "Add check");
+}
+
+<div class="sticky-header d-flex align-items-center justify-content-between">
+    <h2>@ViewData["Title"]</h2>
+    <a asp-action="Index" class="btn btn-secondary">Back to list</a>
+</div>
+
+<partial name="_StatusMessage" />
+
+<form method="post" class="mt-4" style="max-width: 600px;">
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group mb-3">
+        <label asp-for="Url" class="form-label"></label>
+        <input asp-for="Url" class="form-control" placeholder="https://example.com" />
+        <span asp-validation-for="Url" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="IntervalMinutes" class="form-label"></label>
+        <input asp-for="IntervalMinutes" type="number" min="1" max="1440" class="form-control" />
+        <span asp-validation-for="IntervalMinutes" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="NotificationEmailsRaw" class="form-label"></label>
+        <input asp-for="NotificationEmailsRaw" class="form-control" placeholder="alice@example.com, bob@example.com" />
+        <small class="form-text text-muted">Separate multiple addresses with commas.</small>
+        <span asp-validation-for="NotificationEmailsRaw" class="text-danger"></span>
+    </div>
+
+    <div class="d-flex align-items-center mb-4">
+        <input asp-for="IsEnabled" type="checkbox" class="btcpay-toggle me-3" />
+        <label asp-for="IsEnabled" class="form-check-label"></label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">@(isEdit ? "Save changes" : "Create check")</button>
+</form>
