@@ -37,10 +37,3 @@ public class UptimeStatusViewModel
 {
     public IReadOnlyList<UptimeCheck> Checks { get; set; } = new List<UptimeCheck>();
 }
-
-public class UptimeCheckerPublicViewModel : UptimeCheckerBasePublicViewModel
-{
-    public string HtmlTemplate { get; set; } = string.Empty;
-    public int InitialCount { get; set; }
-    public Dictionary<string, decimal> InitialVolumeByCurrency { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-}

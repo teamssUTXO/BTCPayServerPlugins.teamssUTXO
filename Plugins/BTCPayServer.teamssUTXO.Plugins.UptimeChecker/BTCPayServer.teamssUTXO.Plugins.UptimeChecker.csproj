@@ -33,11 +33,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <EmbeddedResource Include="Views\Shared\HistoricalTemplates\default.html" />
+      <PackageReference Include="MailKit" Version="4.15.1" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MailKit" Version="4.15.1" />
+      <UpToDateCheckInput Remove="Views\Shared\UptimeCheckerNav.cshtml" />
     </ItemGroup>
 
 </Project>
