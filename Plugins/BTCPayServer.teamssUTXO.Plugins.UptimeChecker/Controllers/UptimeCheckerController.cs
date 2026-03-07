@@ -12,12 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
-// GET  /server/uptimechecker              → liste des checks
-// GET  /server/uptimechecker/create       → formulaire création
-// POST /server/uptimechecker/create       → sauvegarde (URL + intervalle + emails + enabled)
-// GET  /server/uptimechecker/{id}/edit    → formulaire édition
-// POST /server/uptimechecker/{id}/edit    → met à jour
-// POST /server/uptimechecker/{id}/delete  → supprime
 
 [Route("server/uptimechecker")]
 [Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
@@ -119,9 +113,9 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) 
         return RedirectToAction(nameof(Index));
     }
 
-    private static System.Collections.Generic.List<string> ParseEmails(string raw) =>
+    private static System.Collections.Generic.List<string> ParseEmails(string? raw) =>
         (raw ?? string.Empty)
-            .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(e => e.Trim())
             .Where(e => !string.IsNullOrWhiteSpace(e))
             .ToList();
