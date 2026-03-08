@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using BTCPayServer.Data;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
@@ -28,7 +26,6 @@ public class UptimeCheckFormViewModel
     [Display(Name = "Active")]
     public bool IsEnabled { get; set; } = true;
 
-    /// <summary>Comma-separated list of notification email addresses.</summary>
     [Display(Name = "Notification emails")]
     public string NotificationEmailsRaw { get; set; } = string.Empty;
 }
