@@ -1,76 +1,82 @@
+@using BTCPayServer.Abstractions.Extensions
+@using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
 @model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.UptimeStatusViewModel
 @{
-    Layout = null;
+    Layout = "_Layout";
+    ViewData.SetActivePage(PluginNavPages.UptimeChecker, "Service Status");
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Service Status</title>
-    <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
-        h1 { margin-bottom: 8px; }
-        p.subtitle { color: #666; margin-bottom: 32px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e5e7eb; }
-        th { font-size: .85rem; text-transform: uppercase; color: #6b7280; }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: .8rem; font-weight: 600; }
-        .up   { background: #d1fae5; color: #065f46; }
-        .down { background: #fee2e2; color: #991b1b; }
-        .pending { background: #e5e7eb; color: #374151; }
-        small.error { color: #9ca3af; }
-    </style>
-</head>
-<body>
-    <h1>Service Status</h1>
-    <p class="subtitle">Current status of all monitored services.</p>
 
-    @if (!Model.Checks.Any())
-    {
-        <p>No services are being monitored yet.</p>
-    }
-    else
-    {
-        <table>
-            <thead>
+<div class="sticky-header d-flex align-items-center justify-content-between">
+    <h2>@ViewData["Title"]</h2>
+</div>
+
+<partial name="_StatusMessage" />
+
+@if (!Model.Checks.Any())
+{
+    <p class="text-muted mt-4">No services are being monitored yet.</p>
+}
+else
+{
+    <table class="table table-hover mt-4">
+        <thead>
+            <tr>
+                <th>URL</th>
+                <th>Interval</th>
+                <th>Status</th>
+                <th>Last checked</th>
+                <th>Active</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var check in Model.Checks)
+            {
+                var result = check.LastResult;
                 <tr>
-                    <th>Service</th>
-                    <th>Status</th>
-                    <th>HTTP</th>
-                    <th>Last checked</th>
+                    <td>
+                        <a href="@check.Url" target="_blank" rel="noopener">@check.Url</a>
+                    </td>
+                    <td>@check.IntervalMinutes min</td>
+                    <td>
+                        @if (result is null)
+                        {
+                            <span class="badge bg-secondary">Pending</span>
+                        }
+                        else if (result.IsUp)
+                        {
+                            <span class="badge bg-success">UP</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">DOWN</span>
+                            @if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
+                            {
+                                <small class="text-muted ms-1">@result.ErrorMessage</small>
+                            }
+                        }
+                    </td>
+                    <td>
+                        @if (result is not null)
+                        {
+                            <span title="@result.CheckedAt.ToString("u")">@result.CheckedAt.ToString("g")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (check.IsEnabled)
+                        {
+                            <span class="text-success">Yes</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No</span>
+                        }
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var check in Model.Checks)
-                {
-                    var result = check.LastResult;
-                    <tr>
-                        <td>@check.Url</td>
-                        <td>
-                            @if (result is null)
-                            {
-                                <span class="badge pending">Pending</span>
-                            }
-                            else if (result.IsUp)
-                            {
-                                <span class="badge up">UP</span>
-                            }
-                            else
-                            {
-                                <span class="badge down">DOWN</span>
-                                @if (!string.IsNullOrWhiteSpace(result.ErrorMessage))
-                                {
-                                    <br /><small class="error">@result.ErrorMessage</small>
-                                }
-                            }
-                        </td>
-                        <td>@(result?.HttpStatusCode?.ToString() ?? "—")</td>
-                        <td>@(result is not null ? result.CheckedAt.ToString("g") : "—")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-</body>
-</html>
+            }
+        </tbody>
+    </table>
+}

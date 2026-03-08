@@ -3,22 +3,26 @@
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<ApplicationUser> SignInManager
 
-@if (SignInManager.IsSignedIn(User) && User.IsInRole(Roles.ServerAdmin))
+@if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-        <a layout-menu-item="UptimeChecker"
-           asp-action="Index"
-           asp-controller="UptimeChecker">
-            <span>Uptime Checker</span>
-        </a>
-    </li>
-} else
-{
-    <li class="nav-item">
-        <a layout-menu-item="UptimeChecker"
-           asp-action="Status"
-           asp-controller="UptimeCheckerPublic">
-            <span>Uptime Checker</span>
-        </a>
-    </li>
+    @if (User.IsInRole(Roles.ServerAdmin))
+    {
+        <li class="nav-item">
+            <a layout-menu-item="UptimeChecker"
+               asp-action="Index"
+               asp-controller="UptimeChecker">
+                <span>Uptime Checker</span>
+            </a>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a layout-menu-item="UptimeCheckerStatus"
+               asp-action="Status"
+               asp-controller="UptimeCheckerPublic">
+                <span>Uptime Checker</span>
+            </a>
+        </li>
+    }
 }
