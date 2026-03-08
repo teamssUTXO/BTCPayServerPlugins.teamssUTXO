@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -6,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
-[AllowAnonymous]
+[Authorize(AuthenticationSchemes = AuthenticationSchemes.Cookie)]
 [Route("uptimechecker")]
 public class UptimeCheckerPublicController(UptimeCheckerService uptimeCheckerService) : Controller
 {
