@@ -11,7 +11,7 @@
 @if (SignInManager.IsSignedIn(User) && !string.IsNullOrEmpty(storeId))
 {
     <li class="nav-item">
-        <a class="nav-link @ViewData.ActivePageClass(PluginNavPages.UptimeChecker)"
+        <a layout-menu-item="UptimeChecker"
            asp-action="Index"
            asp-controller="UptimeChecker">
             <span class="me-2"></span>

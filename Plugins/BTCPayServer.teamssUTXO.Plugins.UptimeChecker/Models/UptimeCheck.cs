@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 
 /// <summary>
-/// Represents a configured uptime check.
+/// Represents a configured uptime check
 /// </summary>
 public class UptimeCheck
 {

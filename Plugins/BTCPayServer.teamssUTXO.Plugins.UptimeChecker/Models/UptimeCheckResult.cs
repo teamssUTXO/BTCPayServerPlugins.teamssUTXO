@@ -3,7 +3,7 @@ using System;
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 
 /// <summary>
-/// Stores the result of a single HTTP check run.
+/// Result of a single HTTP check run
 /// </summary>
 public class UptimeCheckResult
 {

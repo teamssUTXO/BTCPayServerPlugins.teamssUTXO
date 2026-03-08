@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
-using BTCPayServer.Abstractions.Models;
 using BTCPayServer.Client;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
