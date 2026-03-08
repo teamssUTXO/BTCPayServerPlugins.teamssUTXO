@@ -29,7 +29,7 @@ public class UptimeCheckFormViewModel
     public bool IsEnabled { get; set; } = true;
 
     /// <summary>Comma-separated list of notification email addresses.</summary>
-    [Display(Name = "Notification emails (comma-separated)")]
+    [Display(Name = "Notification emails")]
     public string NotificationEmailsRaw { get; set; } = string.Empty;
 }
 

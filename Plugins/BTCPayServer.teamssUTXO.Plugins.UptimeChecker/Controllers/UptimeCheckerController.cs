@@ -93,10 +93,20 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) 
         if (existingCheck is null)
             return NotFound();
 
+        if (existingCheck.Url != vm.Url)
+        {
+            var initialResult = await uptimeCheckerService.CheckUrlAsync(vm.Url);
+            existingCheck.IsEnabled = initialResult.IsUp;
+        }
+        else
+        {
+            existingCheck.IsEnabled = vm.IsEnabled;
+        }
+
         existingCheck.Url = vm.Url;
         existingCheck.IntervalMinutes = vm.IntervalMinutes;
-        existingCheck.IsEnabled = vm.IsEnabled;
         existingCheck.NotificationEmails = ParseEmails(vm.NotificationEmailsRaw);
+
 
         await uptimeCheckerService.AddOrUpdateCheckAsync(existingCheck);
 
