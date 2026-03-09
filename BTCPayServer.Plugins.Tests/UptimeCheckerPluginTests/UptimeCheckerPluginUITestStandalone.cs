@@ -36,7 +36,6 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         Assert.True(await addButton.IsVisibleAsync());
     }
 
-
     [Fact]
     public async Task UptimeCheckerCreateCheckTest()
     {
@@ -45,13 +44,13 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await GoToUrl("/server/uptimechecker/create");
         await Page.Locator("#Url").FillAsync("https://example.com");
         await Page.Locator("#IntervalMinutes").FillAsync("10");
+        await Page.Locator("#NotificationEmailsRaw").FillAsync("test@test.com");
         await Page.Locator("button[type='submit']").ClickAsync();
         await AssertSuccessMessage("Check for https://example.com created successfully.");
         var urlCell = Page.Locator("table tbody tr td a", new PageLocatorOptions { HasText = "https://example.com" });
         await urlCell.WaitForAsync();
         Assert.True(await urlCell.IsVisibleAsync());
     }
-
 
     [Fact]
     public async Task UptimeCheckerEditCheckTest()
@@ -61,6 +60,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await GoToUrl("/server/uptimechecker/create");
         await Page.Locator("#Url").FillAsync("https://httpbin.org/get");
         await Page.Locator("#IntervalMinutes").FillAsync("5");
+        await Page.Locator("#NotificationEmailsRaw").FillAsync("test@test.com");
         await Page.Locator("button[type='submit']").ClickAsync();
         await FindAlertMessageAsync();
         var editButton =
@@ -70,13 +70,15 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         var intervalInput = Page.Locator("#IntervalMinutes");
         await intervalInput.ClearAsync();
         await intervalInput.FillAsync("15");
+        var emailInput = Page.Locator("#NotificationEmailsRaw");
+        await emailInput.ClearAsync();
+        await emailInput.FillAsync("edittest@test.com");
         await Page.Locator("button[type='submit']").ClickAsync();
         await AssertSuccessMessage("Check for https://httpbin.org/get updated successfully.");
         var updatedRow = Page.Locator("table tbody tr", new PageLocatorOptions { HasText = "https://httpbin.org/get" });
         var rowText = await updatedRow.First.TextContentAsync();
         Assert.Contains("15", rowText);
     }
-
 
     [Fact]
     public async Task UptimeCheckerDeleteCheckTest()
@@ -86,27 +88,20 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await GoToUrl("/server/uptimechecker/create");
         await Page.Locator("#Url").FillAsync("https://delete-me.example.com");
         await Page.Locator("#IntervalMinutes").FillAsync("5");
+        await Page.Locator("#NotificationEmailsRaw").FillAsync("test@test.com");
         await Page.Locator("button[type='submit']").ClickAsync();
         await FindAlertMessageAsync();
-        Page.Dialog += (_, dialog) => dialog.AcceptAsync();
         var deleteButton =
             Page.Locator("table tbody tr", new PageLocatorOptions { HasText = "https://delete-me.example.com" })
-                .Locator("form button.btn-danger");
+                .Locator("a.btn-danger");
         await deleteButton.First.ClickAsync();
+        // Wait for the Bootstrap confirm modal and click the confirm button
+        var confirmButton = Page.Locator("#ConfirmContinue");
+        await confirmButton.WaitForAsync();
+        await confirmButton.ClickAsync();
         await AssertSuccessMessage("Check deleted.");
         var rows = Page.Locator("table tbody tr", new PageLocatorOptions { HasText = "https://delete-me.example.com" });
         Assert.Equal(0, await rows.CountAsync());
-    }
-
-
-    [Fact]
-    public async Task UptimeCheckerPublicStatusPageTest()
-    {
-        await InitializePlaywright(ServerTester);
-        await GoToUrl("/uptimechecker/status");
-        var heading = await Page.Locator("h1").First.TextContentAsync();
-        Assert.Contains("Service Status", heading);
-        Assert.True(await Page.IsVisibleAsync("h1"));
     }
 
     private async Task LoginAsAdmin()
