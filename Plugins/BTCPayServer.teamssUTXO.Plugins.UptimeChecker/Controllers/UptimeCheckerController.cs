@@ -13,7 +13,7 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
 
 [Route("server/uptimechecker")]
-[Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
+[Authorize(Policy = Policies.CanModifyStoreSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
 public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) : Controller
 {
     [HttpGet("")]
