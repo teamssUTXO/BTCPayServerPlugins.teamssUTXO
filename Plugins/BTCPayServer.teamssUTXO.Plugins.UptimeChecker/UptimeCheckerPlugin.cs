@@ -1,5 +1,7 @@
 using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Abstractions.Models;
+using BTCPayServer.Data;
+using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models.Migrations;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,6 +21,7 @@ public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
         services.AddSingleton<SendEmailService>();
         services.AddSingleton<UptimeCheckerService>();
         services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<UptimeCheckerService>());
+        services.AddMigration<ApplicationDbContext, CreateUptimeCheckerTableMigration>();
         base.Execute(services);
     }
 }

@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using BTCPayServer.Data;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
+using Dapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 
@@ -13,8 +18,11 @@ public class UptimeCheckerService : IHostedService, IDisposable
 {
     private readonly SendEmailService _sendEmailService;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ApplicationDbContextFactory _dbContextFactory;
+    private readonly ILogger<UptimeCheckerService> _logger;
 
-    private readonly List<UptimeCheck> _checks = new(); // TODO : à remplacer par une intégration à la BDD de BTCPay Server
+    // checks restored from DB on startup
+    private readonly List<UptimeCheck> _checks = new();
     private readonly SemaphoreSlim _checksLock = new(1, 1);
 
     private CancellationTokenSource? _cts;
@@ -22,17 +30,20 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
     private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(20);
 
-    public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ILogger<UptimeCheckerService> logger)
+    public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ApplicationDbContextFactory dbContextFactory, ILogger<UptimeCheckerService> logger)
     {
         _sendEmailService = sendEmailService;
         _httpClientFactory = httpClientFactory;
+        _dbContextFactory = dbContextFactory;
+        _logger = logger;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
+        await LoadFromDatabaseAsync(cancellationToken);
+
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _loopTask = RunLoopAsync(_cts.Token);
-        return Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -47,6 +58,37 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
     public async Task AddOrUpdateCheckAsync(UptimeCheck check)
     {
+        await using var ctx = _dbContextFactory.CreateContext();
+        var conn = ctx.Database.GetDbConnection();
+
+        await conn.ExecuteAsync("""
+            INSERT INTO "uptimechecker_checks"
+                ("id", "url", "interval_minutes", "is_enabled", "notification_emails",
+                 "last_result", "last_known_is_up", "next_check_at")
+            VALUES
+                (@id, @url, @interval_minutes, @is_enabled, @notification_emails::jsonb,
+                 @last_result::jsonb, @last_known_is_up, @next_check_at)
+            ON CONFLICT ("id") DO UPDATE SET
+                "url" = EXCLUDED."url",
+                "interval_minutes" = EXCLUDED."interval_minutes",
+                "is_enabled" = EXCLUDED."is_enabled",
+                "notification_emails" = EXCLUDED."notification_emails",
+                "last_result" = EXCLUDED."last_result",
+                "last_known_is_up" = EXCLUDED."last_known_is_up",
+                "next_check_at" = EXCLUDED."next_check_at";
+            """,
+            new
+            {
+                id = check.Id,
+                url = check.Url,
+                interval_minutes = check.IntervalMinutes,
+                is_enabled = check.IsEnabled,
+                notification_emails = JsonConvert.SerializeObject(check.NotificationEmails),
+                last_result = check.LastResult is null ? null : JsonConvert.SerializeObject(check.LastResult),
+                last_known_is_up = check.LastKnownIsUp,
+                next_check_at = check.NextCheckAt
+            });
+
         await _checksLock.WaitAsync();
         try
         {
@@ -64,6 +106,10 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
     public async Task RemoveCheckAsync(string checkId)
     {
+        await using var ctx = _dbContextFactory.CreateContext();
+        var conn = ctx.Database.GetDbConnection();
+        await conn.ExecuteAsync("""DELETE FROM "uptimechecker_checks" WHERE "id" = @id;""", new { id = checkId });
+
         await _checksLock.WaitAsync();
         try
         {
@@ -89,15 +135,15 @@ public class UptimeCheckerService : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// Performs HTTP check against a raw URL string (to initialize the state of a check - UP/DOWN)
+    /// Performs HTTP check against a raw URL string (to initialize the state of a check – UP/DOWN).
     /// </summary>
     public Task<UptimeCheckResult> CheckUrlAsync(string url, CancellationToken ct = default) =>
         CheckUrlAsync(new UptimeCheck { Url = url }, ct);
 
     /// <summary>
-    /// Performs HTTP request
+    /// Performs the actual HTTP GET request and returns the result.
     /// </summary>
-    public async Task<UptimeCheckResult> CheckUrlAsync(UptimeCheck check, CancellationToken ct = default)
+    private async Task<UptimeCheckResult> CheckUrlAsync(UptimeCheck check, CancellationToken ct = default)
     {
         var checkedAt = DateTimeOffset.UtcNow;
         var client = _httpClientFactory.CreateClient("UptimeChecker");
@@ -130,7 +176,38 @@ public class UptimeCheckerService : IHostedService, IDisposable
         }
     }
 
-    // Background loop
+    private async Task LoadFromDatabaseAsync(CancellationToken ct)
+    {
+        try
+        {
+            await using var ctx = _dbContextFactory.CreateContext();
+            var conn = ctx.Database.GetDbConnection();
+
+            var rows = (await conn.QueryAsync<UptimeCheckSettings>("""
+                SELECT "id", "url", "interval_minutes", "is_enabled",
+                       "notification_emails"::text, "last_result"::text,
+                       "last_known_is_up", "next_check_at"
+                FROM "uptimechecker_checks";
+                """)).ToList();
+
+            await _checksLock.WaitAsync(ct);
+            try
+            {
+                _checks.Clear();
+                _checks.AddRange(rows.Select(r => r.ToDomain()));
+                _logger.LogInformation("UptimeChecker: restored {Count} check(s) from database.", _checks.Count);
+            }
+            finally
+            {
+                _checksLock.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UptimeChecker: failed to load checks from database.");
+        }
+    }
+
     private async Task RunLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
@@ -158,7 +235,6 @@ public class UptimeCheckerService : IHostedService, IDisposable
     /// <summary>
     /// Determines which checks are currently due based on their scheduled date.
     /// </summary>
-    /// <param name="ct"></param>
     private async Task RunDueChecksAsync(CancellationToken ct)
     {
         List<UptimeCheck> snapshot;
@@ -194,8 +270,10 @@ public class UptimeCheckerService : IHostedService, IDisposable
     {
         var result = await CheckUrlAsync(check, ct);
 
-        bool isTransition = check.LastKnownIsUp.HasValue && check.LastKnownIsUp.Value != result.IsUp;
-        bool isFirstRun = !check.LastKnownIsUp.HasValue;
+        var isTransition = check.LastKnownIsUp.HasValue && check.LastKnownIsUp.Value != result.IsUp;
+        var isFirstRun = !check.LastKnownIsUp.HasValue;
+
+        UptimeCheck? updatedCheck = null;
 
         await _checksLock.WaitAsync(ct);
         try
@@ -206,23 +284,51 @@ public class UptimeCheckerService : IHostedService, IDisposable
             live.LastResult = result;
             live.LastKnownIsUp = result.IsUp;
             live.NextCheckAt = DateTimeOffset.UtcNow.AddMinutes(live.IntervalMinutes);
+
+            updatedCheck = live;
         }
         finally
         {
             _checksLock.Release();
         }
 
+        if (updatedCheck is not null)
+            await PersistCheckResultAsync(updatedCheck, ct);
+
         if (!isFirstRun && isTransition)
         {
             if (result.IsUp)
-            {
                 await _sendEmailService.SendMailUpAsync(check, result);
-            }
             else
-            {
                 await _sendEmailService.SendMailDownAsync(check, result);
-            }
+        }
+    }
 
+    private async Task PersistCheckResultAsync(UptimeCheck check, CancellationToken ct)
+    {
+        try
+        {
+            await using var ctx = _dbContextFactory.CreateContext();
+            var conn = ctx.Database.GetDbConnection();
+
+            await conn.ExecuteAsync("""
+                UPDATE "uptimechecker_checks"
+                SET "last_result"     = @last_result::jsonb,
+                    "last_known_is_up"= @last_known_is_up,
+                    "next_check_at"   = @next_check_at
+                WHERE "id" = @id;
+                """,
+                new
+                {
+                    id = check.Id,
+                    last_result = check.LastResult is null ? (string?)null : JsonConvert.SerializeObject(check.LastResult),
+                    last_known_is_up = check.LastKnownIsUp,
+                    next_check_at = check.NextCheckAt
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UptimeChecker: failed to persist check result for check {CheckId}.", check.Id);
         }
     }
 
