@@ -62,7 +62,13 @@ else
                     <td>
                         @if (result is not null)
                         {
-                            <span class="text-success">@result.HttpStatusCode</span>
+                            if (result.HttpStatusCode is >= 200 and <= 399)
+                            {
+                                <span class="text-success">@result.HttpStatusCode</span>
+                            } else
+                            {
+                                <span class="text-danger">@result.HttpStatusCode</span>
+                            }
                         }
                         else
                         {
