@@ -1,40 +1,29 @@
-﻿# Uptime Monitor — Plugin v1
+﻿# Uptime Checker — Plugin v1
 
-## Objectif
+<img width="1920" height="912" alt="Image" src="https://github.com/user-attachments/assets/f5c4c4ad-afc7-4cc7-837e-77cf0720f9b2" />
 
-Ce plugin permet de surveiller la disponibilité de services web en effectuant des vérifications HTTP périodiques sur une liste d'URLs configurées par l'administrateur.
+## Objective
 
-## Fonctionnement
+This plugin check and monitor the availability of web services by performing HTTP checks on a list of URLs configured by the store administrator.
 
-L'administrateur crée des **checks**, chacun associé à :
+## How it works
 
-- une URL à surveiller (`http://` ou `https://`)
-- un intervalle de vérification (en minutes)
-- une liste d'adresses e-mail à notifier
-- un statut actif/inactif
+The administrator creates checks, each associated with :
 
-Un **worker en arrière-plan** exécute les checks selon leur intervalle configuré. Une réponse HTTP `200–399` est considérée comme **up** ; tout autre code ou échec réseau (timeout, DNS, TLS…) est considéré comme **down**.
+- A URL to check (http:// or https://)
+- A verification interval
+- A list of email adresses to notify
 
-## Alertes e-mail
+A background worker executes the checks according to their configured interval. An HTTP response between 200 and 399 is considered up. Any other code or network failure (timeout, DNS, TLS, etc.) is considered down.
 
-Le plugin envoie des notifications uniquement lors des **transitions d'état** :
+## Email Alerts
 
-- **down** → un e-mail d'alerte est envoyé (une seule fois)
-- **up** (récupération) → un e-mail de rétablissement est envoyé
+The plugin sends notifications only during state transitions:
 
-Tant que le service reste dans le même état, aucun e-mail supplémentaire n'est envoyé.
+- Down: An alert email is sent (only once).
 
-## Données persistées
+- Up (recovery): A recovery email is sent.
 
-Pour chaque check, le plugin conserve :
+As long as the service remains in the same state, no additional emails are sent.
 
-- la date et l'heure du dernier test
-- le résultat (up / down)
-- le code HTTP retourné (si disponible)
-- le message d'erreur (si la requête a échoué)
-
-Ces informations sont stockées de façon persistante et restent disponibles après un redémarrage.
-
-## Périmètre v1
-
-Cette première version couvre exclusivement les fonctionnalités décrites ci-dessus. Les fonctionnalités avancées (historique, dashboards, webhooks, etc.) sont hors scope pour l'instant.
+<img width="1920" height="912" alt="Image" src="https://github.com/user-attachments/assets/b6bda301-f051-4766-a3c3-6467726630d6" />
