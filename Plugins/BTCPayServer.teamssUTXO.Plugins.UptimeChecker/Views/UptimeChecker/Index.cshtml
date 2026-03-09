@@ -26,6 +26,7 @@ else
                 <th>URL</th>
                 <th>Interval</th>
                 <th>Status</th>
+                <th>HTTP Code</th>
                 <th>Last checked</th>
                 <th>Active</th>
                 <th></th>
@@ -56,6 +57,16 @@ else
                             {
                                 <small class="text-muted ms-1">@result.ErrorMessage</small>
                             }
+                        }
+                    </td>
+                    <td>
+                        @if (result is not null)
+                        {
+                            <span class="badge bg-success">result.HttpStatusCode</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">-</span>
                         }
                     </td>
                     <td>
