@@ -92,25 +92,32 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) 
         if (existingCheck is null)
             return NotFound();
 
-        if (existingCheck.Url != vm.Url)
+        var lastResult = existingCheck.LastResult;
+        var lastKnownIsUp = existingCheck.LastKnownIsUp;
+        var isEnabled = vm.IsEnabled;
+
+        if (existingCheck.Url != vm.Url && vm.IsEnabled)
         {
             var initialResult = await uptimeCheckerService.CheckUrlAsync(vm.Url);
-            existingCheck.LastResult = initialResult;
-            existingCheck.LastKnownIsUp = initialResult.IsUp;
-            existingCheck.IsEnabled = initialResult.IsUp;
+            lastResult = initialResult;
+            lastKnownIsUp = initialResult.IsUp;
         }
-        else
+        
+        var updatedCheck = new UptimeCheck
         {
-            existingCheck.IsEnabled = vm.IsEnabled;
-        }
+            Id = existingCheck.Id,
+            Url = vm.Url,
+            IntervalMinutes = vm.IntervalMinutes,
+            IsEnabled = isEnabled,
+            NotificationEmails = ParseEmails(vm.NotificationEmailsRaw),
+            LastResult = lastResult,
+            LastKnownIsUp = lastKnownIsUp,
+            NextCheckAt = existingCheck.NextCheckAt
+        };
 
-        existingCheck.Url = vm.Url;
-        existingCheck.IntervalMinutes = vm.IntervalMinutes;
-        existingCheck.NotificationEmails = ParseEmails(vm.NotificationEmailsRaw);
+        await uptimeCheckerService.AddOrUpdateCheckAsync(updatedCheck);
 
-        await uptimeCheckerService.AddOrUpdateCheckAsync(existingCheck);
-
-        TempData[WellKnownTempData.SuccessMessage] = $"Check for {existingCheck.Url} updated successfully.";
+        TempData[WellKnownTempData.SuccessMessage] = $"Check for {updatedCheck.Url} updated successfully.";
         return RedirectToAction(nameof(Index));
     }
 
