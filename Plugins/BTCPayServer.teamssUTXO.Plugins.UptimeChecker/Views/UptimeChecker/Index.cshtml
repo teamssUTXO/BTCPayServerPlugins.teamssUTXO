@@ -36,12 +36,13 @@ else
             @foreach (var check in Model.Checks)
             {
                 var result = check.LastResult;
+                var inactiveClass = !check.IsEnabled ? "text-muted opacity-50" : null;
                 <tr>
-                    <td>
+                    <td class="@inactiveClass">
                         <a href="@check.Url" target="_blank" rel="noopener">@check.Url</a>
                     </td>
-                    <td>@check.IntervalMinutes min</td>
-                    <td>
+                    <td class="@inactiveClass">@check.IntervalMinutes min</td>
+                    <td class="@inactiveClass">
                         @if (result is null)
                         {
                             <span class="badge bg-secondary">Pending</span>
@@ -59,7 +60,7 @@ else
                             }
                         }
                     </td>
-                    <td>
+                    <td class="@inactiveClass">
                         @if (result is not null)
                         {
                             if (result.HttpStatusCode is >= 200 and <= 399)
@@ -75,17 +76,17 @@ else
                             <span class="text-muted">-</span>
                         }
                     </td>
-                    <td>
+                    <td class="@inactiveClass">
                         @if (result is not null)
                         {
-                            <span title="@result.CheckedAt.ToString("u")">@result.CheckedAt.ToString("g")</span>
+                            <span title="@result.CheckedAt.ToString("u")">@result.CheckedAt.ToLocalTime().ToString("g")</span>
                         }
                         else
                         {
                             <span class="text-muted">—</span>
                         }
                     </td>
-                    <td>
+                    <td class="@inactiveClass">
                         @if (check.IsEnabled)
                         {
                             <span class="text-success">Yes</span>
