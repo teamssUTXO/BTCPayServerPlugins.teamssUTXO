@@ -29,8 +29,3 @@ public class UptimeCheckFormViewModel
     [Display(Name = "Notification emails")]
     public string NotificationEmailsRaw { get; set; } = string.Empty;
 }
-
-public class UptimeStatusViewModel
-{
-    public IReadOnlyList<UptimeCheck> Checks { get; set; } = new List<UptimeCheck>();
-}
