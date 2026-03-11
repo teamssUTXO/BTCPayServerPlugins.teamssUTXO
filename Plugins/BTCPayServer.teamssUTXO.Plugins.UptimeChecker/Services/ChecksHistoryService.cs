@@ -5,17 +5,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using BTCPayServer.Data;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
-
 using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 
-public class ChecksHistoryService
+public class ChecksHistoryService : IDisposable
 {
     private readonly ApplicationDbContextFactory _dbContextFactory;
     private readonly ILogger<ChecksHistoryService> _logger;
+
+    private ChecksHistorySettings _settings = new();
+    private readonly SemaphoreSlim _settingsLock = new(1, 1);
 
     public ChecksHistoryService(ApplicationDbContextFactory dbContextFactory, ILogger<ChecksHistoryService> logger)
     {
@@ -23,7 +25,7 @@ public class ChecksHistoryService
         _logger = logger;
     }
 
-    public async Task<ChecksHistorySettings> GetHistorySettingsAsync(CancellationToken ct = default)
+    public async Task LoadSettingsFromDatabaseAsync(CancellationToken ct = default)
     {
         try
         {
@@ -34,12 +36,32 @@ public class ChecksHistoryService
                 FROM "uptimechecker_history_settings"
                 WHERE "id" = 'global';
                 """);
-            return row?.ToDomain() ?? new ChecksHistorySettings();
+            await _settingsLock.WaitAsync(ct);
+            try
+            {
+                _settings = row?.ToDomain() ?? new ChecksHistorySettings();
+            }
+            finally
+            {
+                _settingsLock.Release();
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "UptimeChecker: failed to load history settings.");
-            return new ChecksHistorySettings();
+        }
+    }
+
+    public async Task<ChecksHistorySettings> GetHistorySettingsAsync(CancellationToken ct = default)
+    {
+        await _settingsLock.WaitAsync(ct);
+        try
+        {
+            return _settings;
+        }
+        finally
+        {
+            _settingsLock.Release();
         }
     }
 
@@ -56,6 +78,16 @@ public class ChecksHistoryService
                     "enable_history" = EXCLUDED."enable_history",
                     "retention_days" = EXCLUDED."retention_days";
                 """, new { enable, retentionDays });
+
+            await _settingsLock.WaitAsync(ct);
+            try
+            {
+                _settings = new ChecksHistorySettings { enable_history = enable, retention_days = retentionDays };
+            }
+            finally
+            {
+                _settingsLock.Release();
+            }
         }
         catch (Exception ex)
         {
@@ -76,6 +108,7 @@ public class ChecksHistoryService
                     (@id, @checkId, @url, @isUp, @httpStatusCode, @errorMessage, @checkedAt, @checkDurationMs);
                 """, new
             {
+                id = Guid.NewGuid().ToString(),
                 checkId = check.Id,
                 url = result.Url,
                 isUp = result.IsUp,
@@ -98,20 +131,13 @@ public class ChecksHistoryService
             await using var ctx = _dbContextFactory.CreateContext();
             var conn = ctx.Database.GetDbConnection();
             var rows = await conn.QueryAsync<UptimeCheckResult>("""
-                SELECT "check_id", "url", "is_up", "http_status_code", "error_message", "checked_at", "check_duration_ms"
+                SELECT "check_id" AS "CheckId", "url" AS "Url", "is_up" AS "IsUp",
+                       "http_status_code" AS "HttpStatusCode", "error_message" AS "ErrorMessage",
+                       "checked_at" AS "CheckedAt", "check_duration_ms" AS "CheckDurationMs"
                 FROM "uptimechecker_history"
                 ORDER BY "checked_at" DESC;
                 """);
-            return rows.Select(r => new UptimeCheckResult
-            {
-                CheckId = r.CheckId,
-                Url = r.Url,
-                IsUp = r.IsUp,
-                HttpStatusCode = r.HttpStatusCode,
-                ErrorMessage = r.ErrorMessage,
-                CheckedAt = r.CheckedAt,
-                CheckDurationMs = r.CheckDurationMs
-            }).ToList().AsReadOnly();
+            return rows.ToList().AsReadOnly();
         }
         catch (Exception ex)
         {
@@ -135,5 +161,10 @@ public class ChecksHistoryService
         {
             _logger.LogError(ex, "UptimeChecker: failed to purge old history entries.");
         }
+    }
+
+    public void Dispose()
+    {
+        _settingsLock.Dispose();
     }
 }

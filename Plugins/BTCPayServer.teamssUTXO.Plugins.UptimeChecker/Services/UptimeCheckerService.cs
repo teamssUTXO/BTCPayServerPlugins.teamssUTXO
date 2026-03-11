@@ -44,6 +44,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await LoadChecksFromDatabaseAsync(cancellationToken);
+        await _checksHistoryService.LoadSettingsFromDatabaseAsync(cancellationToken);
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _loopTask = RunLoopAsync(_cts.Token);
