@@ -29,3 +29,15 @@ public class UptimeCheckFormViewModel
     [Display(Name = "Notification emails")]
     public string NotificationEmailsRaw { get; set; } = string.Empty;
 }
+
+public class UptimeCheckHistoryViewModel
+{
+    public bool EnableHistory { get; set; }
+
+    [Display(Name = "Notification emails")]
+    public string NotificationEmailsRaw { get; set; } = string.Empty;
+
+    [Range(1, 365)]
+    [Display(Name = "Retention (days)")]
+    public int RetentionDays { get; set; } = 30;
+}

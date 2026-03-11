@@ -51,7 +51,7 @@ public class SendEmailService
             if (string.IsNullOrWhiteSpace(email))
                 continue;
 
-            var body = BuildDownBody(check, result, email);
+            var body = BuildDownBody(result, email);
             var mailbox = new MailboxAddress(email, email);
             sender.SendEmail(mailbox, subject, body);
         }
@@ -74,17 +74,17 @@ public class SendEmailService
             if (string.IsNullOrWhiteSpace(email))
                 continue;
 
-            var body = BuildUpBody(check, result, email);
+            var body = BuildUpBody(result, email);
             var mailbox = new MailboxAddress(email, email);
             sender.SendEmail(mailbox, subject, body);
         }
     }
 
-    private string BuildDownBody(UptimeCheck check, UptimeCheckResult result, string recipientEmail)
+    private string BuildDownBody(UptimeCheckResult result, string recipientEmail)
     {
         var rows = new List<string>
         {
-            $"  <tr><td style='padding:4px 12px 4px 0;font-weight:bold'>URL</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(check.Url)}</td></tr>",
+            $"  <tr><td style='padding:4px 12px 4px 0;font-weight:bold'>URL</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(result.Url)}</td></tr>",
             $"  <tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Checked at</td><td style='padding:4px 0'>{result.CheckedAt:u}</td></tr>"
         };
 
@@ -102,11 +102,11 @@ public class SendEmailService
         return EmailsPlugin.CreateEmailBody(content + BuildFooter(recipientEmail));
     }
 
-    private string BuildUpBody(UptimeCheck check, UptimeCheckResult result, string recipientEmail)
+    private string BuildUpBody(UptimeCheckResult result, string recipientEmail)
     {
         var rows = new List<string>
         {
-            $"  <tr><td style='padding:4px 12px 4px 0;font-weight:bold'>URL</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(check.Url)}</td></tr>",
+            $"  <tr><td style='padding:4px 12px 4px 0;font-weight:bold'>URL</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(result.Url)}</td></tr>",
             $"  <tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Recovered at</td><td style='padding:4px 0'>{result.CheckedAt:u}</td></tr>"
         };
 

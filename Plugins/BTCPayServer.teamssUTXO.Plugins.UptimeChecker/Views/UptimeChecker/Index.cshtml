@@ -9,7 +9,10 @@
 
 <div class="sticky-header d-flex align-items-center justify-content-between">
     <h2>@ViewData["Title"]</h2>
-    <a asp-action="Create" class="btn btn-primary">Add check</a>
+    <div class="d-flex gap-2">
+        <a asp-action="History" class="btn btn-info">Checks History</a>
+        <a asp-action="Create" class="btn btn-primary">Add check</a>
+    </div>
 </div>
 
 <partial name="_StatusMessage" />

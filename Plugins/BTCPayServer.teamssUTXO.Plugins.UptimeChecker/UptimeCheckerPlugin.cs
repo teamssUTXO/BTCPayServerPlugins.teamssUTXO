@@ -22,6 +22,7 @@ public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
         services.AddSingleton<UptimeCheckerService>();
         services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<UptimeCheckerService>());
         services.AddMigration<ApplicationDbContext, CreateUptimeCheckerTableMigration>();
+        services.AddMigration<ApplicationDbContext, CreateUptimeCheckerTableMigration>();
         base.Execute(services);
     }
 }

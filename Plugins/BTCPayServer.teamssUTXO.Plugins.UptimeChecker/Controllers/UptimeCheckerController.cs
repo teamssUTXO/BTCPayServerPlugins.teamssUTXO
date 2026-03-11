@@ -102,7 +102,7 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) 
             lastResult = initialResult;
             lastKnownIsUp = initialResult.IsUp;
         }
-        
+
         var updatedCheck = new UptimeCheck
         {
             Id = existingCheck.Id,
@@ -128,6 +128,28 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) 
         await uptimeCheckerService.RemoveCheckAsync(id);
         TempData[WellKnownTempData.SuccessMessage] = "Check deleted.";
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet("history")]
+    public async Task<IActionResult> History()
+    {
+        var (enabled, retention) = await uptimeCheckerService.GetHistorySettingsAsync();
+
+        return View("History", new UptimeCheckHistoryViewModel
+        {
+            EnableHistory =  enabled,
+            RetentionDays =  retention
+        });
+    }
+
+    [HttpPost("history")]
+    public async Task<IActionResult> History(UptimeCheckHistoryViewModel vm)
+    {
+        await uptimeCheckerService.SaveHistorySettingsAsync(vm.EnableHistory, vm.RetentionDays);
+
+        TempData[WellKnownTempData.SuccessMessage] = "History settings saved.";
+
+        return RedirectToAction(nameof(History));
     }
 
     private static System.Collections.Generic.List<string> ParseEmails(string? raw) =>

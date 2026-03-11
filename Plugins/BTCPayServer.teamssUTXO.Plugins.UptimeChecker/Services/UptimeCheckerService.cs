@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Diagnostics;
 using BTCPayServer.Data;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 using Dapper;
@@ -40,7 +41,8 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await LoadFromDatabaseAsync(cancellationToken);
+        await LoadChecksFromDatabaseAsync(cancellationToken);
+        // await LoadHistoryFromDatabaseAsync(cancellationToken);
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _loopTask = RunLoopAsync(_cts.Token);
@@ -147,17 +149,23 @@ public class UptimeCheckerService : IHostedService, IDisposable
     {
         var checkedAt = DateTimeOffset.UtcNow;
         var client = _httpClientFactory.CreateClient("UptimeChecker");
+        var stw = Stopwatch.StartNew();
+
 
         try
         {
             using var response = await client.GetAsync(check.Url, ct);
+            stw.Stop();
+
             var code = (int)response.StatusCode;
 
             return new UptimeCheckResult
             {
+                Url = check.Url,
                 IsUp = code is >= 200 and < 400,
                 HttpStatusCode = code,
-                CheckedAt = checkedAt
+                CheckedAt = checkedAt,
+                CheckDurationMs = stw.ElapsedMilliseconds,
             };
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -176,7 +184,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
         }
     }
 
-    private async Task LoadFromDatabaseAsync(CancellationToken ct)
+    private async Task LoadChecksFromDatabaseAsync(CancellationToken ct)
     {
         try
         {
@@ -298,9 +306,16 @@ public class UptimeCheckerService : IHostedService, IDisposable
         if (!isFirstRun && isTransition)
         {
             if (result.IsUp)
+            {
                 await _sendEmailService.SendMailUpAsync(check, result);
+                _logger.LogInformation("UptimeChecker: {Url} has been restored. Status: {StatusCode}", result.Url, result.HttpStatusCode);
+            }
             else
+            {
                 await _sendEmailService.SendMailDownAsync(check, result);
+                _logger.LogError("Uptime Checker: {Url} is down. Message: {StatusCode}", result.Url, result.HttpStatusCode);
+            }
+
         }
     }
 
