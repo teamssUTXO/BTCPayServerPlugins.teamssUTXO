@@ -104,6 +104,161 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         Assert.Equal(0, await rows.CountAsync());
     }
 
+
+    [Fact]
+    public async Task UptimeCheckerHistoryDisabledByDefaultTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/history");
+
+        // Reset to known state first
+        var toggle = Page.Locator("#enableHistoryToggle");
+        await toggle.WaitForAsync();
+        if (await toggle.IsCheckedAsync())
+            await toggle.UncheckAsync();
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await AssertSuccessMessage("History settings saved.");
+
+        await toggle.WaitForAsync();
+        Assert.False(await toggle.IsCheckedAsync());
+
+        var retentionSection = Page.Locator("#retentionSection");
+        Assert.False(await retentionSection.IsVisibleAsync());
+
+        var disabledMsg = Page.Locator("p.text-muted", new PageLocatorOptions { HasText = "History recording is disabled" });
+        Assert.True(await disabledMsg.IsVisibleAsync());
+    }
+
+    [Fact]
+    public async Task UptimeCheckerHistoryEnableAndSaveTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/history");
+
+        // Enable history
+        var toggle = Page.Locator("#enableHistoryToggle");
+        await toggle.WaitForAsync();
+        await toggle.CheckAsync();
+
+        // Retention section should now be visible
+        var retentionSection = Page.Locator("#retentionSection");
+        await retentionSection.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        Assert.True(await retentionSection.IsVisibleAsync());
+
+        // Save settings
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await AssertSuccessMessage("History settings saved.");
+
+        // After save, toggle should remain checked and retention section visible
+        var toggleAfter = Page.Locator("#enableHistoryToggle");
+        await toggleAfter.WaitForAsync();
+        Assert.True(await toggleAfter.IsCheckedAsync());
+
+        var retentionAfter = Page.Locator("#retentionSection");
+        Assert.True(await retentionAfter.IsVisibleAsync());
+    }
+
+    [Fact]
+    [Obsolete("Obsolete")]
+    public async Task UptimeCheckerHistoryRetentionDaysValidationTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/history");
+
+        // Enable history first so the retention field is visible
+        var toggle = Page.Locator("#enableHistoryToggle");
+        await toggle.WaitForAsync();
+        await toggle.CheckAsync();
+
+        // Set an out-of-range retention value
+        var retentionInput = Page.Locator("#RetentionDays");
+        await retentionInput.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await retentionInput.ClearAsync();
+        await retentionInput.FillAsync("366");
+
+        await Page.Locator("button[type='submit']").ClickAsync();
+
+        // HTML validation
+        var navigationTask = Page.WaitForNavigationAsync();
+        await Page.Locator("button[type='submit']").ClickAsync();
+        var navigated = await Task.WhenAny(navigationTask, Task.Delay(2000)) == navigationTask;
+        Assert.False(navigated);
+
+        // await Page.ScreenshotAsync(new PageScreenshotOptions { Path = "C:\\Users\\timmf\\Documents\\GitHub\\BTCPayServerPlugins.teamssUTXO\\debug.png", FullPage = true});
+
+        // Backend validation
+        await retentionInput.EvaluateAsync("el => el.removeAttribute('max')");
+        await retentionInput.FillAsync("366");
+        await Page.RunAndWaitForNavigationAsync(async () =>
+        {
+            await Page.Locator("button[type='submit']").ClickAsync();
+        });
+        var validationError = Page.Locator(".alert-danger", new PageLocatorOptions { HasText = "Invalid retention period. Must be between 1 and 365 days." });
+        await validationError.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        Assert.True(await validationError.IsVisibleAsync());
+    }
+
+    [Fact]
+    public async Task UptimeCheckerHistoryDisableAfterEnableTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/history");
+
+        // Enable and save
+        var toggle = Page.Locator("#enableHistoryToggle");
+        await toggle.WaitForAsync();
+        await toggle.CheckAsync();
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await FindAlertMessageAsync();
+
+        // Now disable and save again
+        var toggle2 = Page.Locator("#enableHistoryToggle");
+        await toggle2.WaitForAsync();
+        await toggle2.UncheckAsync();
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await AssertSuccessMessage("History settings saved.");
+
+        // Toggle should be unchecked, disabled message should be back
+        var toggleAfter = Page.Locator("#enableHistoryToggle");
+        await toggleAfter.WaitForAsync();
+        Assert.False(await toggleAfter.IsCheckedAsync());
+
+        var disabledMsg = Page.Locator("p.text-muted", new PageLocatorOptions { HasText = "History recording is disabled" });
+        Assert.True(await disabledMsg.IsVisibleAsync());
+    }
+
+    [Fact]
+    public async Task UptimeCheckerHistoryRetentionDaysPersistsTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/history");
+
+        // Enable history and set a specific retention period
+        var toggle = Page.Locator("#enableHistoryToggle");
+        await toggle.WaitForAsync();
+        await toggle.CheckAsync();
+
+        var retentionInput = Page.Locator("#RetentionDays");
+        await retentionInput.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await retentionInput.ClearAsync();
+        await retentionInput.FillAsync("30");
+
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await AssertSuccessMessage("History settings saved.");
+
+        // Reload the page and confirm the value persisted
+        await GoToUrl("/server/uptimechecker/history");
+        var retentionAfterReload = Page.Locator("#RetentionDays");
+        await retentionAfterReload.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        var persistedValue = await retentionAfterReload.InputValueAsync();
+        Assert.Equal("30", persistedValue);
+    }
+
     private async Task LoginAsAdmin()
     {
         var user = ServerTester.NewAccount();

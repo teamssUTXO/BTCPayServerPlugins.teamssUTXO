@@ -72,11 +72,9 @@ public class ChecksHistoryService : IDisposable
             await using var ctx = _dbContextFactory.CreateContext();
             var conn = ctx.Database.GetDbConnection();
             await conn.ExecuteAsync("""
-                INSERT INTO "uptimechecker_history_settings" ("id", "enable_history", "retention_days")
-                VALUES ('global', @enable, @retentionDays)
-                ON CONFLICT ("id") DO UPDATE SET
-                    "enable_history" = EXCLUDED."enable_history",
-                    "retention_days" = EXCLUDED."retention_days";
+                UPDATE "uptimechecker_history_settings"
+                SET "enable_history" = @enable,
+                    "retention_days" = @retentionDays;
                 """, new { enable, retentionDays });
 
             await _settingsLock.WaitAsync(ct);

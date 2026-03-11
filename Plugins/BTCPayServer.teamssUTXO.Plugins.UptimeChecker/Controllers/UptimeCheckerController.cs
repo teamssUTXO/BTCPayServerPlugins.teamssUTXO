@@ -148,6 +148,11 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
     [HttpPost("history")]
     public async Task<IActionResult> History(UptimeCheckHistoryViewModel vm)
     {
+        if (vm.RetentionDays is < 1 or > 365)
+        {
+            TempData[WellKnownTempData.ErrorMessage] = "Invalid retention period. Must be between 1 and 365 days.";
+            return RedirectToAction(nameof(History));
+        }
         await checksHistoryService.SaveHistorySettingsAsync(vm.EnableHistory, vm.RetentionDays);
         TempData[WellKnownTempData.SuccessMessage] = "History settings saved.";
         return RedirectToAction(nameof(History));
