@@ -7,7 +7,10 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 /// </summary>
 public class UptimeCheckResult
 {
+    public string CheckId { get; set; } = string.Empty;
+
     public string Url { get; set; } = string.Empty;
+
     public bool IsUp { get; set; }
 
     public int? HttpStatusCode { get; set; }

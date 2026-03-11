@@ -21,6 +21,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ApplicationDbContextFactory _dbContextFactory;
     private readonly ILogger<UptimeCheckerService> _logger;
+    private readonly ChecksHistoryService _checksHistoryService;
 
     // checks restored from DB on startup
     private readonly List<UptimeCheck> _checks = new();
@@ -31,18 +32,18 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
     private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(20);
 
-    public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ApplicationDbContextFactory dbContextFactory, ILogger<UptimeCheckerService> logger)
+    public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ApplicationDbContextFactory dbContextFactory, ILogger<UptimeCheckerService> logger, ChecksHistoryService checksHistoryService)
     {
         _sendEmailService = sendEmailService;
         _httpClientFactory = httpClientFactory;
         _dbContextFactory = dbContextFactory;
         _logger = logger;
+        _checksHistoryService = checksHistoryService;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await LoadChecksFromDatabaseAsync(cancellationToken);
-        // await LoadHistoryFromDatabaseAsync(cancellationToken);
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _loopTask = RunLoopAsync(_cts.Token);
@@ -161,6 +162,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
             return new UptimeCheckResult
             {
+                CheckId = check.Id,
                 Url = check.Url,
                 IsUp = code is >= 200 and < 400,
                 HttpStatusCode = code,
@@ -301,7 +303,15 @@ public class UptimeCheckerService : IHostedService, IDisposable
         }
 
         if (updatedCheck is not null)
+        {
             await PersistCheckResultAsync(updatedCheck, ct);
+            var settings = await _checksHistoryService.GetHistorySettingsAsync(ct);
+            if (settings.enable_history)
+            {
+                await _checksHistoryService.AppendHistoryEntryAsync(updatedCheck, result, ct);
+                await _checksHistoryService.PurgeOldEntriesAsync(settings.retention_days, ct);
+            }
+        }
 
         if (!isFirstRun && isTransition)
         {
@@ -328,9 +338,9 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
             await conn.ExecuteAsync("""
                 UPDATE "uptimechecker_checks"
-                SET "last_result"     = @last_result::jsonb,
+                SET "last_result" = @last_result::jsonb,
                     "last_known_is_up"= @last_known_is_up,
-                    "next_check_at"   = @next_check_at
+                    "next_check_at"  = @next_check_at
                 WHERE "id" = @id;
                 """,
                 new

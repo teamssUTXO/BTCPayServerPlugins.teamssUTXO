@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using BTCPayServer.Abstractions.Constants;
@@ -14,7 +15,7 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
 [Route("server/uptimechecker")]
 [Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
-public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) : Controller
+public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, ChecksHistoryService checksHistoryService) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index()
@@ -133,26 +134,26 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService) 
     [HttpGet("history")]
     public async Task<IActionResult> History()
     {
-        var (enabled, retention) = await uptimeCheckerService.GetHistorySettingsAsync();
+        var settings = await checksHistoryService.GetHistorySettingsAsync();
+        var entries = settings.enable_history ? await checksHistoryService.GetHistoryEntriesAsync() : new List<UptimeCheckResult>();
 
         return View("History", new UptimeCheckHistoryViewModel
         {
-            EnableHistory =  enabled,
-            RetentionDays =  retention
+            EnableHistory = settings.enable_history,
+            RetentionDays = settings.retention_days,
+            Entries = entries
         });
     }
 
     [HttpPost("history")]
     public async Task<IActionResult> History(UptimeCheckHistoryViewModel vm)
     {
-        await uptimeCheckerService.SaveHistorySettingsAsync(vm.EnableHistory, vm.RetentionDays);
-
+        await checksHistoryService.SaveHistorySettingsAsync(vm.EnableHistory, vm.RetentionDays);
         TempData[WellKnownTempData.SuccessMessage] = "History settings saved.";
-
         return RedirectToAction(nameof(History));
     }
 
-    private static System.Collections.Generic.List<string> ParseEmails(string? raw) =>
+    private static List<string> ParseEmails(string? raw) =>
         (raw ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(e => e.Trim())
