@@ -6,34 +6,36 @@
     ViewData.SetActivePage(PluginNavPages.UptimeChecker, "Check History");
 }
 
-<div class="sticky-header d-flex align-items-center justify-content-between">
-    <h2>@ViewData["Title"]</h2>
+<div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h2 class="mb-0">@ViewData["Title"]</h2>
     <a asp-action="Index" class="btn btn-secondary">Back to checks</a>
 </div>
 
 <partial name="_StatusMessage" />
 
-<section class="mt-4" style="max-width:480px">
-    <h4 class="mb-3">History settings</h4>
-    <form method="post" asp-action="History">
-        <div class="mb-3">
-            <div class="form-check form-switch">
-                <input asp-for="EnableHistory" class="form-check-input" type="checkbox" id="enableHistoryToggle" />
-                <label asp-for="EnableHistory" class="form-check-label" for="enableHistoryToggle">
-                    Record check history
-                </label>
+<div class="row mt-4">
+    <div class="col-12 col-md-8 col-lg-6">
+        <h4 class="mb-3">History settings</h4>
+        <form method="post" asp-action="History">
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input asp-for="EnableHistory" class="form-check-input" type="checkbox" id="enableHistoryToggle" />
+                    <label asp-for="EnableHistory" class="form-check-label" for="enableHistoryToggle">
+                        Record check history
+                    </label>
+                </div>
+                <small class="text-muted">When enabled, every check result is stored in the database.</small>
             </div>
-            <small class="text-muted">When enabled, every check result is stored in the database.</small>
-        </div>
-        <div id="retentionSection" class="mb-3" style="@(Model.EnableHistory ? "" : "display:none")">
-            <label asp-for="RetentionDays" class="form-label"></label>
-            <input asp-for="RetentionDays" class="form-control" type="number" min="1" max="365" style="max-width:120px" />
-            <span asp-validation-for="RetentionDays" class="text-danger small"></span>
-            <small class="text-muted d-block mt-1">Entries older than this many days are deleted automatically (1–365).</small>
-        </div>
-        <button type="submit" class="btn btn-primary">Save settings</button>
-    </form>
-</section>
+            <div id="retentionSection" class="mb-3" style="@(Model.EnableHistory ? "" : "display:none")">
+                <label asp-for="RetentionDays" class="form-label"></label>
+                <input asp-for="RetentionDays" class="form-control w-auto" type="number" min="1" max="365" style="max-width:120px" />
+                <span asp-validation-for="RetentionDays" class="text-danger small"></span>
+                <small class="text-muted d-block mt-1">Entries older than this many days are deleted automatically (1–365).</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Save settings</button>
+        </form>
+    </div>
+</div>
 
 <hr class="my-4" />
 
@@ -54,17 +56,19 @@ else
                 <tr>
                     <th>URL</th>
                     <th>Status</th>
-                    <th>HTTP code</th>
-                    <th>Response time</th>
+                    <th class="d-none d-sm-table-cell">HTTP code</th>
+                    <th class="d-none d-md-table-cell">Response time</th>
                     <th>Checked at</th>
-                    <th>Error</th>
+                    <th class="d-none d-lg-table-cell">Error</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var entry in Model.Entries)
                 {
                     <tr>
-                        <td><a href="@entry.Url" target="_blank" rel="noopener">@entry.Url</a></td>
+                        <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <a href="@entry.Url" target="_blank" rel="noopener" title="@entry.Url">@entry.Url</a>
+                        </td>
                         <td>
                             @if (entry.IsUp)
                             {
@@ -75,7 +79,7 @@ else
                                 <span class="badge bg-danger">DOWN</span>
                             }
                         </td>
-                        <td>
+                        <td class="d-none d-sm-table-cell">
                             @if (entry.HttpStatusCode.HasValue)
                             {
                                 if (entry.HttpStatusCode is >= 200 and < 400)
@@ -92,11 +96,11 @@ else
                                 <span class="text-muted">—</span>
                             }
                         </td>
-                        <td>@entry.CheckDurationMs ms</td>
+                        <td class="d-none d-md-table-cell">@entry.CheckDurationMs ms</td>
                         <td>
                             <span title="@entry.CheckedAt.ToString("u")">@entry.CheckedAt.ToLocalTime().ToString("g")</span>
                         </td>
-                        <td>
+                        <td class="d-none d-lg-table-cell">
                             @if (!string.IsNullOrWhiteSpace(entry.ErrorMessage))
                             {
                                 <small class="text-muted">@entry.ErrorMessage</small>
