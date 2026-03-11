@@ -34,7 +34,7 @@ public class ChecksHistoryService : IDisposable
             var row = await conn.QueryFirstOrDefaultAsync<ChecksHistorySettings>("""
                 SELECT "enable_history", "retention_days"
                 FROM "uptimechecker_history_settings"
-                WHERE "id" = 'global';
+                LIMIT 1;
                 """);
             await _settingsLock.WaitAsync(ct);
             try

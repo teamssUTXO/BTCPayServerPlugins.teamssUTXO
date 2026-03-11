@@ -9,7 +9,7 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models.Migrations;
 /// <summary>
 /// Creates the <c>uptime_history_settings</c> & <c>uptimechecker_history</c> tables at plugin start
 /// </summary>
-public class CreateChecksHistoryTableMigration() : MigrationBase<ApplicationDbContext>("20260311_uptimechecker_history")
+public class CreateChecksHistoryTableMigration() : MigrationBase<ApplicationDbContext>("20260311_uptimechecker_history_v2")
 {
     public override async Task MigrateAsync(ApplicationDbContext dbContext, CancellationToken cancellationToken)
     {
@@ -17,7 +17,7 @@ public class CreateChecksHistoryTableMigration() : MigrationBase<ApplicationDbCo
         await conn.ExecuteAsync("""
             CREATE TABLE IF NOT EXISTS "uptimechecker_history_settings" (
                 "enable_history" BOOLEAN NOT NULL DEFAULT FALSE,
-                "retention_days" INTEGER NOT NULL DEFAULT 30
+                "retention_days" INTEGER NOT NULL DEFAULT 7
             );
 
             CREATE TABLE IF NOT EXISTS "uptimechecker_history" (

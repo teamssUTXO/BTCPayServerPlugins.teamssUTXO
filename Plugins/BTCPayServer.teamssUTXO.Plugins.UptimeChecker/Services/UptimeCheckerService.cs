@@ -30,7 +30,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
     private CancellationTokenSource? _cts;
     private Task? _loopTask;
 
-    private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(20);
+    private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(15); // adjust this to control how frequently the loop evaluates which checks are due to run
 
     public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ApplicationDbContextFactory dbContextFactory, ILogger<UptimeCheckerService> logger, ChecksHistoryService checksHistoryService)
     {
@@ -179,10 +179,13 @@ public class UptimeCheckerService : IHostedService, IDisposable
         {
             return new UptimeCheckResult
             {
+                CheckId = check.Id,
+                Url = check.Url,
                 IsUp = false,
                 HttpStatusCode = null,
                 ErrorMessage = ex.Message,
-                CheckedAt = checkedAt
+                CheckedAt = checkedAt,
+                CheckDurationMs = stw.ElapsedMilliseconds
             };
         }
     }
