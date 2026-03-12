@@ -4,6 +4,14 @@
 @{
     Layout = "_Layout";
     ViewData.SetActivePage(PluginNavPages.UptimeChecker, "Check History");
+
+    var total = Model.Total ?? 0; var skip = Model.Skip; var count = Model.Count;
+    var hasPrev = skip > 0;
+    var hasNext = skip + count < total;
+    var from = total == 0 ? 0 : skip + 1;
+    var to = Math.Min(skip + count, total);
+
+    string PageUrl(int newSkip) => $"?skip={newSkip}&count={count}";
 }
 
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -24,7 +32,6 @@
                         Record check history
                     </label>
                 </div>
-                <small class="text-muted">When enabled, every check result is stored in the database.</small>
             </div>
             <div id="retentionSection" class="mb-3" style="@(Model.EnableHistory ? "" : "display:none")">
                 <label asp-for="RetentionDays" class="form-label"></label>
@@ -43,7 +50,7 @@
 {
     <p class="text-muted">History recording is disabled. Enable it above to start logging check results.</p>
 }
-else if (!Model.Entries.Any())
+else if (Model.Total == 0)
 {
     <p class="text-muted">No history entries yet. Results will appear here after the next scheduled check run.</p>
 }
@@ -111,6 +118,41 @@ else
             </tbody>
         </table>
     </div>
+    @if (total > count)
+    {
+        <nav aria-label="History pagination" class="mt-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <span class="text-muted small">Showing <strong>@from – @to</strong> of <strong>@total</strong> entries</span>
+                <div class="d-flex gap-2">
+                    @if (hasPrev)
+                    {
+                        <a href="@PageUrl(Math.Max(0, skip - count))" class="btn btn-outline-primary">
+                            &#8592; Previous
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary" disabled style="opacity: 0.4;">
+                            &#8592; Previous
+                        </button>
+                    }
+
+                    @if (hasNext)
+                    {
+                        <a href="@PageUrl(skip + count)" class="btn btn-outline-primary">
+                            Next &#8594;
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary" disabled style="opacity: 0.4;">
+                            Next &#8594;
+                        </button>
+                    }
+                </div>
+            </div>
+        </nav>
+    }
 }
 
 <script>

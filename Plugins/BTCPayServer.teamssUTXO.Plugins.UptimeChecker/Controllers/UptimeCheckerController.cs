@@ -132,17 +132,24 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
     }
 
     [HttpGet("history")]
-    public async Task<IActionResult> History()
+    public async Task<IActionResult> History(int skip = 0, int count = 25)
     {
         var settings = await checksHistoryService.GetHistorySettingsAsync();
-        var entries = settings.enable_history ? await checksHistoryService.GetHistoryEntriesAsync() : new List<UptimeCheckResult>();
 
-        return View("History", new UptimeCheckHistoryViewModel
+        var vm = new UptimeCheckHistoryViewModel
         {
             EnableHistory = settings.enable_history,
             RetentionDays = settings.retention_days,
-            Entries = entries
-        });
+            Skip = skip,
+            Count = count
+        };
+
+        if (!settings.enable_history) return View("History", vm);
+
+        vm.Total = await checksHistoryService.CountHistoryEntriesAsync();
+        vm.Entries = await checksHistoryService.GetHistoryEntriesAsync(skip, count);
+
+        return View("History", vm);
     }
 
     [HttpPost("history")]

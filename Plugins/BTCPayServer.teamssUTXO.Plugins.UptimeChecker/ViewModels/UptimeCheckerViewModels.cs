@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using BTCPayServer.Models;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
@@ -30,7 +31,7 @@ public class UptimeCheckFormViewModel
     public string NotificationEmailsRaw { get; set; } = string.Empty;
 }
 
-public class UptimeCheckHistoryViewModel
+public class UptimeCheckHistoryViewModel : BasePagingViewModel
 {
     public bool EnableHistory { get; set; }
 
@@ -39,4 +40,6 @@ public class UptimeCheckHistoryViewModel
     public int RetentionDays { get; set; } = 30;
 
     public IReadOnlyList<UptimeCheckResult> Entries { get; set; } = new List<UptimeCheckResult>();
+
+    public override int CurrentPageCount => Entries.Count;
 }

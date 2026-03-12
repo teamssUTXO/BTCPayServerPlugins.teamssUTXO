@@ -122,7 +122,24 @@ public class ChecksHistoryService : IDisposable
         }
     }
 
-    public async Task<IReadOnlyList<UptimeCheckResult>> GetHistoryEntriesAsync(CancellationToken ct = default)
+    public async Task<int> CountHistoryEntriesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await using var ctx = _dbContextFactory.CreateContext();
+            var conn = ctx.Database.GetDbConnection();
+            return await conn.ExecuteScalarAsync<int>("""
+                SELECT COUNT(*) FROM "uptimechecker_history";
+                """);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UptimeChecker: failed to count history entries.");
+            return 0;
+        }
+    }
+
+    public async Task<IReadOnlyList<UptimeCheckResult>> GetHistoryEntriesAsync(int skip = 0, int count = 50, CancellationToken ct = default)
     {
         try
         {
@@ -133,8 +150,9 @@ public class ChecksHistoryService : IDisposable
                        "http_status_code" AS "HttpStatusCode", "error_message" AS "ErrorMessage",
                        "checked_at" AS "CheckedAt", "check_duration_ms" AS "CheckDurationMs"
                 FROM "uptimechecker_history"
-                ORDER BY "checked_at" DESC;
-                """);
+                ORDER BY "checked_at" DESC
+                LIMIT @count OFFSET @skip;
+                """, new { count, skip });
             return rows.ToList().AsReadOnly();
         }
         catch (Exception ex)
