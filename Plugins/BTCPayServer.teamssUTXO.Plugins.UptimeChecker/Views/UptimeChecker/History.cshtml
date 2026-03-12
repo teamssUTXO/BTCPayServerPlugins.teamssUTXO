@@ -53,13 +53,16 @@
         <form method="post" asp-action="History">
             <div class="mb-3">
                 <div class="form-check form-switch">
-                    <input asp-for="EnableHistory" class="form-check-input" type="checkbox" id="enableHistoryToggle" />
+                    <input asp-for="EnableHistory" class="form-check-input" type="checkbox" id="enableHistoryToggle"
+                           data-bs-toggle="collapse" data-bs-target="#retentionSection"
+                           aria-expanded="@(Model.EnableHistory ? "true" : "false")"
+                           aria-controls="retentionSection" />
                     <label asp-for="EnableHistory" class="form-check-label" for="enableHistoryToggle">
                         Record check history
                     </label>
                 </div>
             </div>
-            <div id="retentionSection" class="mb-3" style="@(Model.EnableHistory ? "" : "display:none")">
+            <div id="retentionSection" class="collapse @(Model.EnableHistory ? "show" : "") mb-3">
                 <label asp-for="RetentionDays" class="form-label"></label>
                 <input asp-for="RetentionDays" class="form-control w-auto" type="number" min="1" max="365" style="max-width:120px" />
                 <span asp-validation-for="RetentionDays" class="text-danger small"></span>
@@ -78,59 +81,70 @@
 }
 else
 {
-    <h4 class="mb-3">
-        Recent check runs
-        @if (activeFilterCount > 0)
-        {
-            <span class="badge bg-secondary ms-2" title="@activeFilterCount active filter(s)">@activeFilterCount filter@(activeFilterCount == 1 ? "" : "s") active</span>
-        }
-    </h4>
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h4 class="mb-0">
+            Recent check runs
+            @if (activeFilterCount > 0)
+            {
+                <span class="badge bg-secondary ms-2" title="@activeFilterCount active filter(s)">@activeFilterCount filter@(activeFilterCount == 1 ? "" : "s") active</span>
+            }
+        </h4>
+        <button class="btn btn-outline-secondary btn-sm" type="button"
+                data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+                aria-expanded="@(activeFilterCount > 0 ? "true" : "false")"
+                aria-controls="filterCollapse"
+                id="filterToggleBtn">
+            @(activeFilterCount > 0 ? "Hide filters" : "Show filters")
+        </button>
+    </div>
 
-    <form method="get" asp-action="History" class="mb-4">
-        <input type="hidden" name="count" value="@count" />
-        <input type="hidden" name="skip" value="0" />
+    <div class="collapse @(activeFilterCount > 0 ? "show" : "") mb-4" id="filterCollapse">
+        <form method="get" asp-action="History">
+            <input type="hidden" name="count" value="@count" />
+            <input type="hidden" name="skip" value="0" />
 
-        <div class="row g-2 align-items-end">
-            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                <label asp-for="UrlFilter" class="form-label"></label>
-                <input asp-for="UrlFilter" class="form-control form-control-sm" placeholder="e.g. example.com" autocomplete="off" />
-            </div>
-            <div class="col-6 col-sm-4 col-md-2">
-                <label asp-for="StatusFilter" class="form-label"></label>
-                <select asp-for="StatusFilter" class="form-select form-select-sm">
-                    <option value="">All</option>
-                    <option value="UP">UP</option>
-                    <option value="DOWN">DOWN</option>
-                </select>
-            </div>
-            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-                <label asp-for="DateFrom" class="form-label"></label>
-                <input type="datetime-local" name="dateFrom" class="form-control form-control-sm"
-                       value="@(Model.DateFrom.HasValue ? Model.DateFrom.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") : "")" />
-            </div>
-            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-                <label asp-for="DateTo" class="form-label"></label>
-                <input type="datetime-local" name="dateTo" class="form-control form-control-sm"
-                       value="@(Model.DateTo.HasValue ? Model.DateTo.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") : "")" />
-            </div>
-            <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-                <div class="form-check mt-4 mt-md-0 mb-1">
-                    <input type="checkbox" name="transitionsOnly" value="true" class="form-check-input" id="transitionsOnly"
-                           @(Model.TransitionsOnly ? "checked=\"checked\"" : "") />
-                    <label class="form-check-label" for="transitionsOnly">
-                        Transitions only
-                    </label>
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label asp-for="UrlFilter" class="form-label"></label>
+                    <input asp-for="UrlFilter" class="form-control form-control-sm" placeholder="e.g. example.com" autocomplete="off" />
+                </div>
+                <div class="col-6 col-sm-4 col-md-2">
+                    <label asp-for="StatusFilter" class="form-label"></label>
+                    <select asp-for="StatusFilter" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="UP">UP</option>
+                        <option value="DOWN">DOWN</option>
+                    </select>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label asp-for="DateFrom" class="form-label"></label>
+                    <input type="datetime-local" name="dateFrom" class="form-control form-control-sm"
+                           value="@(Model.DateFrom.HasValue ? Model.DateFrom.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") : "")" />
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label asp-for="DateTo" class="form-label"></label>
+                    <input type="datetime-local" name="dateTo" class="form-control form-control-sm"
+                           value="@(Model.DateTo.HasValue ? Model.DateTo.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") : "")" />
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <div class="form-check mt-4 mt-md-0 mb-1">
+                        <input type="checkbox" name="transitionsOnly" value="true" class="form-check-input" id="transitionsOnly"
+                               @(Model.TransitionsOnly ? "checked=\"checked\"" : "") />
+                        <label class="form-check-label" for="transitionsOnly">
+                            Transitions only
+                        </label>
+                    </div>
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                    @if (activeFilterCount > 0)
+                    {
+                        <a asp-action="History" asp-route-count="@count" class="btn btn-outline-secondary btn-sm">Clear</a>
+                    }
                 </div>
             </div>
-            <div class="col-auto d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                @if (activeFilterCount > 0)
-                {
-                    <a asp-action="History" asp-route-count="@count" class="btn btn-outline-secondary btn-sm">Clear</a>
-                }
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 
     @if (Model.Total == 0)
     {
@@ -247,7 +261,12 @@ else
 }
 
 <script>
-    document.getElementById('enableHistoryToggle').addEventListener('change', function () {
-        document.getElementById('retentionSection').style.display = this.checked ? '' : 'none';
-    });
+    (function () {
+        var filterCollapse = document.getElementById('filterCollapse');
+        var filterBtn = document.getElementById('filterToggleBtn');
+        if (filterCollapse && filterBtn) {
+            filterCollapse.addEventListener('show.bs.collapse', function () { filterBtn.textContent = 'Hide filters'; });
+            filterCollapse.addEventListener('hide.bs.collapse', function () { filterBtn.textContent = 'Show filters'; });
+        }
+    })();
 </script>
