@@ -34,7 +34,7 @@ public class ChecksHistoryService : IDisposable
             await using var ctx = _dbContextFactory.CreateContext();
             var conn = ctx.Database.GetDbConnection();
             var row = await conn.QueryFirstOrDefaultAsync<ChecksHistorySettings>("""
-                SELECT "enable_history", "retention_days"
+                SELECT "id", "enable_history", "retention_days"
                 FROM "uptimechecker_history_settings"
                 LIMIT 1;
                 """);
@@ -74,9 +74,11 @@ public class ChecksHistoryService : IDisposable
             await using var ctx = _dbContextFactory.CreateContext();
             var conn = ctx.Database.GetDbConnection();
             await conn.ExecuteAsync("""
-                UPDATE "uptimechecker_history_settings"
-                SET "enable_history" = @enable,
-                    "retention_days" = @retentionDays;
+                INSERT INTO "uptimechecker_history_settings" ("id", "enable_history", "retention_days")
+                VALUES (1, @enable, @retentionDays)
+                ON CONFLICT ("id") DO UPDATE
+                SET "enable_history" = EXCLUDED."enable_history",
+                    "retention_days" = EXCLUDED."retention_days";
                 """, new { enable, retentionDays });
 
             await _settingsLock.WaitAsync(ct);
