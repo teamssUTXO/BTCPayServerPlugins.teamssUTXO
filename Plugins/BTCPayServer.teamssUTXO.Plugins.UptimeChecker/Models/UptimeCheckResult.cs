@@ -13,6 +13,8 @@ public class UptimeCheckResult
 
     public bool IsUp { get; set; }
 
+    public bool IsStateChange { get; set; }
+
     public int? HttpStatusCode { get; set; }
 
     public string? ErrorMessage { get; set; }

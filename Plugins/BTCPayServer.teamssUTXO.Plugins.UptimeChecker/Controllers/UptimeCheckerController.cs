@@ -132,7 +132,7 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
     }
 
     [HttpGet("history")]
-    public async Task<IActionResult> History(int skip = 0, int count = 25)
+    public async Task<IActionResult> History(int skip = 0, int count = 25, string? urlFilter = null, string? statusFilter = null, bool transitionsOnly = false, DateTimeOffset? dateFrom = null, DateTimeOffset? dateTo = null)
     {
         count = Math.Clamp(count, 10, 1000);
         skip  = Math.Max(skip, 0);
@@ -144,13 +144,20 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
             EnableHistory = settings.enable_history,
             RetentionDays = settings.retention_days,
             Skip = skip,
-            Count = count
+            Count = count,
+            UrlFilter = urlFilter,
+            StatusFilter = statusFilter,
+            TransitionsOnly = transitionsOnly,
+            DateFrom = dateFrom,
+            DateTo = dateTo
         };
 
         if (!settings.enable_history) return View("History", vm);
 
-        vm.Total = await checksHistoryService.CountHistoryEntriesAsync();
-        vm.Entries = await checksHistoryService.GetHistoryEntriesAsync(skip, count);
+        var filter = vm.ToFilter();
+
+        vm.Total = await checksHistoryService.CountHistoryEntriesAsync(filter);
+        vm.Entries = await checksHistoryService.GetHistoryEntriesAsync(skip, count, filter);
 
         return View("History", vm);
     }

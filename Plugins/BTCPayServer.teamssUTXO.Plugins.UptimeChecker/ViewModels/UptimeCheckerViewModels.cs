@@ -1,9 +1,15 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using BTCPayServer.Models;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
+
+public record HistoryFilter(string? UrlFilter, bool? IsUp, bool TransitionsOnly, DateTimeOffset? From, DateTimeOffset? To )
+{
+    public bool IsEmpty => string.IsNullOrWhiteSpace(UrlFilter) && IsUp is null && !TransitionsOnly && From is null && To is null;
+}
 
 public class UptimeCheckListViewModel
 {
@@ -42,4 +48,28 @@ public class UptimeCheckHistoryViewModel : BasePagingViewModel
     public IReadOnlyList<UptimeCheckResult> Entries { get; set; } = new List<UptimeCheckResult>();
 
     public override int CurrentPageCount => Entries.Count;
+
+    // Filter
+    [Display(Name = "URL contains")]
+    public string? UrlFilter { get; set; }
+
+    [Display(Name = "Status")]
+    public string? StatusFilter { get; set; }
+
+    [Display(Name = "Transitions only")]
+    public bool TransitionsOnly { get; set; }
+
+    [Display(Name = "From")]
+    public DateTimeOffset? DateFrom { get; set; }
+
+    [Display(Name = "To")]
+    public DateTimeOffset? DateTo { get; set; }
+
+    public HistoryFilter ToFilter() => new(
+        UrlFilter: string.IsNullOrWhiteSpace(UrlFilter) ? null : UrlFilter.Trim(),
+        IsUp: StatusFilter switch { "UP" => true, "DOWN" => false, _ => null },
+        TransitionsOnly: TransitionsOnly,
+        From: DateFrom,
+        To: DateTo
+    );
 }

@@ -287,6 +287,8 @@ public class UptimeCheckerService : IHostedService, IDisposable
         var isTransition = check.LastKnownIsUp.HasValue && check.LastKnownIsUp.Value != result.IsUp;
         var isFirstRun = !check.LastKnownIsUp.HasValue;
 
+        result.IsStateChange = isTransition;
+
         UptimeCheck? updatedCheck = null;
 
         await _checksLock.WaitAsync(ct);

@@ -28,7 +28,8 @@ public class CreateChecksHistoryTableMigration() : MigrationBase<ApplicationDbCo
                 "http_status_code" INTEGER,
                 "error_message" TEXT,
                 "checked_at" TIMESTAMPTZ NOT NULL,
-                "check_duration_ms" BIGINT NOT NULL
+                "check_duration_ms" BIGINT NOT NULL,
+                "is_state_change" BOOLEAN NOT NULL DEFAULT FALSE
             );
             """);
     }
