@@ -11,7 +11,8 @@
     var from = total == 0 ? 0 : skip + 1;
     var to = Math.Min(skip + count, total);
 
-    string PageUrl(int newSkip) => $"?skip={newSkip}&count={count}";
+    string PageUrl(int newSkip, int? newCount = null) =>
+        $"?skip={newSkip}&count={newCount ?? count}";
 }
 
 <div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -118,37 +119,42 @@ else
             </tbody>
         </table>
     </div>
-    @if (total > count)
+    @if (total > 10)
     {
         <nav aria-label="History pagination" class="mt-4">
-            <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <span class="text-muted small">Showing <strong>@from – @to</strong> of <strong>@total</strong> entries</span>
-                <div class="d-flex gap-2">
-                    @if (hasPrev)
-                    {
-                        <a href="@PageUrl(Math.Max(0, skip - count))" class="btn btn-outline-primary">
-                            &#8592; Previous
-                        </a>
-                    }
-                    else
-                    {
-                        <button class="btn btn-outline-secondary" disabled style="opacity: 0.4;">
-                            &#8592; Previous
-                        </button>
-                    }
+                <div class="d-flex align-items-center gap-3">
+                    <ul class="pagination me-auto mb-0">
+                        @foreach (var size in new[] { 10, 25, 50, 100, 250, 500 })
+                        {
+                            if (total > (size == 10 ? 0 : size / 2))
+                            {
+                                <li class="page-item @(count == size ? "active" : null)">
+                                    <a class="page-link" href="@PageUrl(0, size)">@size</a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                    <div class="d-flex gap-2">
+                        @if (hasPrev)
+                        {
+                            <a href="@PageUrl(Math.Max(0, skip - count))" class="btn btn-outline-primary">&#8592; Previous</a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-secondary" disabled style="opacity:0.4;">&#8592; Previous</button>
+                        }
 
-                    @if (hasNext)
-                    {
-                        <a href="@PageUrl(skip + count)" class="btn btn-outline-primary">
-                            Next &#8594;
-                        </a>
-                    }
-                    else
-                    {
-                        <button class="btn btn-outline-secondary" disabled style="opacity: 0.4;">
-                            Next &#8594;
-                        </button>
-                    }
+                        @if (hasNext)
+                        {
+                            <a href="@PageUrl(skip + count)" class="btn btn-outline-primary">Next &#8594;</a>
+                        }
+                        else
+                        {
+                            <button class="btn btn-outline-secondary" disabled style="opacity:0.4;">Next &#8594;</button>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>

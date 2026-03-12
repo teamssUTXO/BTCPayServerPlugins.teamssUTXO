@@ -134,6 +134,9 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
     [HttpGet("history")]
     public async Task<IActionResult> History(int skip = 0, int count = 25)
     {
+        count = Math.Clamp(count, 10, 1000);
+        skip  = Math.Max(skip, 0);
+
         var settings = await checksHistoryService.GetHistorySettingsAsync();
 
         var vm = new UptimeCheckHistoryViewModel
