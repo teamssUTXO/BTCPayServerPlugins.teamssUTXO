@@ -28,10 +28,12 @@ As long as the service remains in the same state, no additional emails are sent.
 
 ## Checks Logs
 
-<img width="2303" height="1433" alt="Image" src="https://github.com/user-attachments/assets/d26fa9bb-1d9e-45a7-9b35-702d632c0f2f" />
-
 ❗This feature is disabled by default.
 
 Save your check history with a configurable retention period ranging from 1 day to 1 year (365 days) — letting you review past incidents, downtime events, and more.
 
-You can also filter results by URL, status, date and UP/DOWN transitions.
+You can also filter results by URL, status, date and UP/DOWN transitions. <br>
+
+<img width="2303" height="1433" alt="Image" src="https://github.com/user-attachments/assets/d26fa9bb-1d9e-45a7-9b35-702d632c0f2f" />
+
+
