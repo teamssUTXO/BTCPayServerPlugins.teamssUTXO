@@ -9,7 +9,7 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models.Migrations;
 /// <summary>
 /// Creates the <c>uptime_history_settings</c> & <c>uptimechecker_history</c> tables at plugin start
 /// </summary>
-public class CreateChecksHistoryTableMigration() : MigrationBase<ApplicationDbContext>("20260312_uptimechecker_history")
+public class CreateChecksHistoryTableMigration() : MigrationBase<ApplicationDbContext>("uptimechecker_history")
 {
     public override async Task MigrateAsync(ApplicationDbContext dbContext, CancellationToken cancellationToken)
     {

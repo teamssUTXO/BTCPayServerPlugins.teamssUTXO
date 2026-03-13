@@ -1,6 +1,6 @@
 ﻿# Uptime Checker — Plugin v1
 
-<img width="1920" height="912" alt="Image" src="https://github.com/user-attachments/assets/f5c4c4ad-afc7-4cc7-837e-77cf0720f9b2" />
+<img width="2876" height="1461" alt="Image" src="https://github.com/user-attachments/assets/38127d3d-7a85-483e-960a-ba5a207027c3" />
 
 ## Objective
 
@@ -26,16 +26,12 @@ The plugin sends notifications only during state transitions:
 
 As long as the service remains in the same state, no additional emails are sent.
 
-<img width="1920" height="912" alt="Image" src="https://github.com/user-attachments/assets/b6bda301-f051-4766-a3c3-6467726630d6" />
-
 ## Checks Logs
+
+<img width="2303" height="1433" alt="Image" src="https://github.com/user-attachments/assets/d26fa9bb-1d9e-45a7-9b35-702d632c0f2f" />
 
 ❗This feature is disabled by default.
 
-You can save your check history with a configurable retention period ranging from 1 day to 1 year (365 days).
+Save your check history with a configurable retention period ranging from 1 day to 1 year (365 days) — letting you review past incidents, downtime events, and more.
 
-This allows you to review past incidents, downtime events, and more.
-
-<img width="2878" height="1463" alt="Image" src="https://github.com/user-attachments/assets/7249754a-31db-42c7-ae45-6d0ede43ddec" />
-
-Filtering by check, days, and status will come soon.
+You can also filter results by URL, status, date and UP/DOWN transitions.
