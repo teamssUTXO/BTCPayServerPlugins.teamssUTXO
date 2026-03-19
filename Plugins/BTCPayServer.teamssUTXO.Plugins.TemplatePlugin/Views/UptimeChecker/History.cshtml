@@ -1,0 +1,272 @@
+@using BTCPayServer.Abstractions.Extensions
+@using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
+@model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.UptimeCheckHistoryViewModel
+@{
+    Layout = "_Layout";
+    ViewData.SetActivePage(PluginNavPages.UptimeChecker, "Check History");
+
+    var total = Model.Total ?? 0; var skip = Model.Skip; var count = Model.Count;
+    var hasPrev = skip > 0;
+    var hasNext = skip + count < total;
+    var from = total == 0 ? 0 : skip + 1;
+    var to = Math.Min(skip + count, total);
+
+    // Builds a pagination URL that keeps all active filters intact.
+    string PageUrl(int newSkip, int? newCount = null)
+    {
+        var parts = new System.Collections.Generic.List<string>
+        {
+            $"skip={newSkip}",
+            $"count={newCount ?? count}"
+        };
+        if (!string.IsNullOrWhiteSpace(Model.UrlFilter))
+            parts.Add($"urlFilter={Uri.EscapeDataString(Model.UrlFilter)}");
+        if (!string.IsNullOrWhiteSpace(Model.StatusFilter))
+            parts.Add($"statusFilter={Uri.EscapeDataString(Model.StatusFilter)}");
+        if (Model.TransitionsOnly)
+            parts.Add("transitionsOnly=true");
+        if (Model.DateFrom.HasValue)
+            parts.Add($"dateFrom={Uri.EscapeDataString(Model.DateFrom.Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
+        if (Model.DateTo.HasValue)
+            parts.Add($"dateTo={Uri.EscapeDataString(Model.DateTo.Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"))}");
+        return "?" + string.Join("&", parts);
+    }
+
+    var activeFilterCount =
+        (!string.IsNullOrWhiteSpace(Model.UrlFilter) ? 1 : 0) +
+        (!string.IsNullOrWhiteSpace(Model.StatusFilter) ? 1 : 0) +
+        (Model.TransitionsOnly ? 1 : 0) +
+        (Model.DateFrom.HasValue ? 1 : 0) +
+        (Model.DateTo.HasValue ? 1 : 0);
+}
+
+<div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h2 class="mb-0">@ViewData["Title"]</h2>
+    <a asp-action="Index" class="btn btn-secondary">Back to checks</a>
+</div>
+
+<partial name="_StatusMessage" />
+
+<div class="row mt-4">
+    <div class="col-12 col-md-8 col-lg-6">
+        <h4 class="mb-3">History settings</h4>
+        <form method="post" asp-action="History">
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input asp-for="EnableHistory" class="form-check-input" type="checkbox" id="enableHistoryToggle"
+                           data-bs-toggle="collapse" data-bs-target="#retentionSection"
+                           aria-expanded="@(Model.EnableHistory ? "true" : "false")"
+                           aria-controls="retentionSection" />
+                    <label asp-for="EnableHistory" class="form-check-label" for="enableHistoryToggle">
+                        Record check history
+                    </label>
+                </div>
+            </div>
+            <div id="retentionSection" class="collapse @(Model.EnableHistory ? "show" : "") mb-3">
+                <label asp-for="RetentionDays" class="form-label"></label>
+                <input asp-for="RetentionDays" class="form-control w-auto" type="number" min="1" max="365" style="max-width:120px" />
+                <span asp-validation-for="RetentionDays" class="text-danger small"></span>
+                <small class="text-muted d-block mt-1">Entries older than this many days are deleted automatically (1–365).</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Save settings</button>
+        </form>
+    </div>
+</div>
+
+<hr class="my-4" />
+
+@if (!Model.EnableHistory)
+{
+    <p class="text-muted">History recording is disabled. Enable it above to start logging check results.</p>
+}
+else
+{
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <h4 class="mb-0">
+            Recent check runs
+            @if (activeFilterCount > 0)
+            {
+                <span class="badge bg-secondary ms-2" title="@activeFilterCount active filter(s)">@activeFilterCount filter@(activeFilterCount == 1 ? "" : "s") active</span>
+            }
+        </h4>
+        <button class="btn btn-outline-secondary btn-sm" type="button"
+                data-bs-toggle="collapse" data-bs-target="#filterCollapse"
+                aria-expanded="@(activeFilterCount > 0 ? "true" : "false")"
+                aria-controls="filterCollapse"
+                id="filterToggleBtn">
+            @(activeFilterCount > 0 ? "Hide filters" : "Show filters")
+        </button>
+    </div>
+
+    <div class="collapse @(activeFilterCount > 0 ? "show" : "") mb-4" id="filterCollapse">
+        <form method="get" asp-action="History">
+            <input type="hidden" name="count" value="@count" />
+            <input type="hidden" name="skip" value="0" />
+
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label asp-for="UrlFilter" class="form-label"></label>
+                    <input asp-for="UrlFilter" class="form-control form-control-sm" placeholder="e.g. example.com" autocomplete="off" />
+                </div>
+                <div class="col-6 col-sm-4 col-md-2">
+                    <label asp-for="StatusFilter" class="form-label"></label>
+                    <select asp-for="StatusFilter" class="form-select form-select-sm">
+                        <option value="">All</option>
+                        <option value="UP">UP</option>
+                        <option value="DOWN">DOWN</option>
+                    </select>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label asp-for="DateFrom" class="form-label"></label>
+                    <input type="datetime-local" name="dateFrom" class="form-control form-control-sm"
+                           value="@(Model.DateFrom.HasValue ? Model.DateFrom.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") : "")" />
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label asp-for="DateTo" class="form-label"></label>
+                    <input type="datetime-local" name="dateTo" class="form-control form-control-sm"
+                           value="@(Model.DateTo.HasValue ? Model.DateTo.Value.ToLocalTime().ToString("yyyy-MM-ddTHH:mm") : "")" />
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <div class="form-check mt-4 mt-md-0 mb-1">
+                        <input type="checkbox" name="transitionsOnly" value="true" class="form-check-input" id="transitionsOnly"
+                               @(Model.TransitionsOnly ? "checked=\"checked\"" : "") />
+                        <label class="form-check-label" for="transitionsOnly">
+                            Transitions only
+                        </label>
+                    </div>
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                    @if (activeFilterCount > 0)
+                    {
+                        <a asp-action="History" asp-route-count="@count" class="btn btn-outline-secondary btn-sm">Clear</a>
+                    }
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @if (Model.Total == 0)
+    {
+        <p class="text-muted">
+            @(activeFilterCount > 0
+                ? "No entries match the current filters."
+                : "No history entries yet. Results will appear here after the next scheduled check run.")
+        </p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Status</th>
+                        <th class="d-none d-sm-table-cell">HTTP code</th>
+                        <th class="d-none d-md-table-cell">Response time</th>
+                        <th>Checked at</th>
+                        <th class="d-none d-lg-table-cell">Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model.Entries)
+                    {
+                        <tr>
+                            <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <a href="@entry.Url" target="_blank" rel="noopener" title="@entry.Url">@entry.Url</a>
+                            </td>
+                            <td>
+                                @if (entry.IsUp)
+                                {
+                                    <span class="badge bg-success">UP</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">DOWN</span>
+                                }
+                            </td>
+                            <td class="d-none d-sm-table-cell">
+                                @if (entry.HttpStatusCode.HasValue)
+                                {
+                                    if (entry.HttpStatusCode is >= 200 and < 400)
+                                    {
+                                        <span class="text-success">@entry.HttpStatusCode</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger">@entry.HttpStatusCode</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="d-none d-md-table-cell">@entry.CheckDurationMs ms</td>
+                            <td>
+                                <span title="@entry.CheckedAt.ToString("u")">@entry.CheckedAt.ToLocalTime().ToString("g")</span>
+                            </td>
+                            <td class="d-none d-lg-table-cell">
+                                @if (!string.IsNullOrWhiteSpace(entry.ErrorMessage))
+                                {
+                                    <small class="text-muted">@entry.ErrorMessage</small>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (total > 10)
+        {
+            <nav aria-label="History pagination" class="mt-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <span class="text-muted small">Showing <strong>@from – @to</strong> of <strong>@total</strong> entries</span>
+                    <div class="d-flex align-items-center gap-3">
+                        <ul class="pagination me-auto mb-0">
+                            @foreach (var size in new[] { 10, 25, 50, 100, 250, 500 })
+                            {
+                                if (total > (size == 10 ? 0 : size / 2))
+                                {
+                                    <li class="page-item @(count == size ? "active" : null)">
+                                        <a class="page-link" href="@PageUrl(0, size)">@size</a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                        <div class="d-flex gap-2">
+                            @if (hasPrev)
+                            {
+                                <a href="@PageUrl(Math.Max(0, skip - count))" class="btn btn-outline-primary">&#8592; Previous</a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-secondary" disabled style="opacity:0.4;">&#8592; Previous</button>
+                            }
+
+                            @if (hasNext)
+                            {
+                                <a href="@PageUrl(skip + count)" class="btn btn-outline-primary">Next &#8594;</a>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-secondary" disabled style="opacity:0.4;">Next &#8594;</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        }
+    }
+}
+
+<script>
+    (function () {
+        var filterCollapse = document.getElementById('filterCollapse');
+        var filterBtn = document.getElementById('filterToggleBtn');
+        if (filterCollapse && filterBtn) {
+            filterCollapse.addEventListener('show.bs.collapse', function () { filterBtn.textContent = 'Hide filters'; });
+            filterCollapse.addEventListener('hide.bs.collapse', function () { filterBtn.textContent = 'Show filters'; });
+        }
+    })();
+</script>

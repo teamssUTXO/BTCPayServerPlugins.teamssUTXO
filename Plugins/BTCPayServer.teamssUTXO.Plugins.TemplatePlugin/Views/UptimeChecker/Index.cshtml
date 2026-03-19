@@ -1,0 +1,117 @@
+@using BTCPayServer.Abstractions.Extensions
+@using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
+@using BTCPayServer.Abstractions.Models
+@model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.UptimeCheckListViewModel
+@{
+    Layout = "_Layout";
+    ViewData.SetActivePage(PluginNavPages.UptimeChecker, "Uptime Checker");
+}
+
+<div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h2 class="mb-0">@ViewData["Title"]</h2>
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-action="History" class="btn btn-info">Checks Log</a>
+        <a asp-action="Create" class="btn btn-primary">Add check</a>
+    </div>
+</div>
+
+<partial name="_StatusMessage" />
+
+@if (!Model.Checks.Any())
+{
+    <p class="text-muted mt-4">No checks configured yet. Click <strong>Add check</strong> to get started.</p>
+}
+else
+{
+    <div class="table-responsive mt-4">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>URL</th>
+                    <th class="d-none d-sm-table-cell">Interval</th>
+                    <th>Status</th>
+                    <th class="d-none d-md-table-cell">HTTP Code</th>
+                    <th class="d-none d-lg-table-cell">Last checked</th>
+                    <th class="d-none d-md-table-cell">Active</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var check in Model.Checks)
+                {
+                    var result = check.LastResult;
+                    var inactiveClass = !check.IsEnabled ? "text-muted opacity-50" : null;
+                    <tr>
+                        <td class="@inactiveClass" style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <a href="@check.Url" target="_blank" rel="noopener" title="@check.Url">@check.Url</a>
+                        </td>
+                        <td class="@inactiveClass d-none d-sm-table-cell">@check.IntervalMinutes min</td>
+                        <td class="@inactiveClass">
+                            @if (result is null)
+                            {
+                                <span class="badge bg-secondary">Pending</span>
+                            }
+                            else if (result.IsUp)
+                            {
+                                <span class="badge bg-success">UP</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">DOWN</span>
+                                <small class="text-muted ms-1 d-none d-lg-inline">@result.ErrorMessage</small>
+                            }
+                        </td>
+                        <td class="@inactiveClass d-none d-md-table-cell">
+                            @if (result is not null)
+                            {
+                                if (result.HttpStatusCode is >= 200 and <= 399)
+                                {
+                                    <span class="text-success">@result.HttpStatusCode</span>
+                                } else
+                                {
+                                    <span class="text-danger">@result.HttpStatusCode</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td class="@inactiveClass d-none d-lg-table-cell">
+                            @if (result is not null)
+                            {
+                                <span title="@result.CheckedAt.ToString("u")">@result.CheckedAt.ToLocalTime().ToString("g")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td class="@inactiveClass d-none d-md-table-cell">
+                            @if (check.IsEnabled)
+                            {
+                                <span class="text-success">Yes</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No</span>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Edit" asp-route-id="@check.Id" class="btn btn-sm btn-secondary">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@check.Id"
+                               class="btn btn-sm btn-danger"
+                               data-bs-toggle="modal"
+                               data-bs-target="#ConfirmModal"
+                               data-title="Delete check"
+                               data-description="The check for <strong>@Html.Encode(check.Url)</strong> will be permanently deleted."
+                               data-confirm="Delete">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<partial name="_Confirm" model="@(new ConfirmModel("Delete check", "This check will be permanently deleted.", "Delete"))" />
