@@ -248,6 +248,9 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
     private static bool IsPrivateOrLoopback(IPAddress ip)
     {
+        if (ip.IsIPv4MappedToIPv6)
+            return IsPrivateOrLoopback(ip.MapToIPv4());
+
         if (IPAddress.IsLoopback(ip)) return true;
 
         var bytes = ip.GetAddressBytes();
@@ -260,15 +263,26 @@ public class UptimeCheckerService : IHostedService, IDisposable
                    bytes[0] == 127 ||  // 127.x.x.x
                    (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) || // 172.16-31.x.x
                    (bytes[0] == 192 && bytes[1] == 168) || // 192.168.x.x
-                   (bytes[0] == 169 && bytes[1] == 254); // 169.254.x.x (AWS metadata)
+                   (bytes[0] == 169 && bytes[1] == 254) || // 169.254.x.x
+                   (bytes[0] == 100 && bytes[1] >= 64 && bytes[1] <= 127) || // 100.64.0.0/10
+                   (bytes[0] == 198 && (bytes[1] == 18 || bytes[1] == 19)); // 198.18.0.0/15
         }
 
         // IPv6
         if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
         {
+            if (ip.Equals(IPAddress.IPv6None) || ip.Equals(IPAddress.IPv6Any))
+                return true;
+
+            var v6 = ip.GetAddressBytes();
+            var isUniqueLocal = (v6[0] & 0xFE) == 0xFC; // fc00::/7
+            var isMulticast = v6[0] == 0xFF; // ff00::/8
+
             return ip.IsIPv6LinkLocal ||
                    ip.IsIPv6SiteLocal ||
-                   ip.Equals(IPAddress.IPv6Loopback);
+                   ip.Equals(IPAddress.IPv6Loopback) ||
+                   isUniqueLocal ||
+                   isMulticast;
         }
 
         return true;

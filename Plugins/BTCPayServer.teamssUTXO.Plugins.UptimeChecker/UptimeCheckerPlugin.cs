@@ -3,6 +3,7 @@ using BTCPayServer.Abstractions.Models;
 using BTCPayServer.Data;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models.Migrations;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
+using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -18,6 +19,7 @@ public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
     public override void Execute(IServiceCollection services)
     {
         services.AddUIExtension("store-integrations-nav", "UptimeCheckerNav");
+        services.AddHttpClient("UptimeChecker").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler{AllowAutoRedirect = false});
         services.AddSingleton<SendEmailService>();
         services.AddSingleton<ChecksHistoryService>();
         services.AddSingleton<UptimeCheckerService>();
