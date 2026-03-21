@@ -53,6 +53,33 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
     }
 
     [Fact]
+    public async Task UptimeCheckerCreateCheckSSRFSecurityTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        //IPv4
+        await GoToUrl("/server/uptimechecker/create");
+        await Page.Locator("#Url").FillAsync("https://localhost:0001/");
+        await Page.Locator("#IntervalMinutes").FillAsync("1");
+        await Page.Locator("#NotificationEmailsRaw").FillAsync("test@test.com");
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await AssertSuccessMessage("Check for https://localhost:0001/ created successfully.");
+        var errorCell = Page.Locator("table tbody tr td", new PageLocatorOptions { HasText = "Url Rejected." }).First;;
+        await errorCell.WaitForAsync();
+        Assert.True(await errorCell.IsVisibleAsync());
+        //IPv6
+        await GoToUrl("/server/uptimechecker/create");
+        await Page.Locator("#Url").FillAsync("http://[::1]/");
+        await Page.Locator("#IntervalMinutes").FillAsync("1");
+        await Page.Locator("#NotificationEmailsRaw").FillAsync("test@test.com");
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await AssertSuccessMessage("Check for http://[::1]/ created successfully.");
+        errorCell = Page.Locator("table tbody tr td", new PageLocatorOptions { HasText = "Url Rejected." }).First;;
+        await errorCell.WaitForAsync();
+        Assert.True(await errorCell.IsVisibleAsync());
+    }
+
+    [Fact]
     public async Task UptimeCheckerEditCheckTest()
     {
         await InitializePlaywright(ServerTester);

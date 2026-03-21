@@ -226,7 +226,6 @@ public class UptimeCheckerService : IHostedService, IDisposable
             return false;
 
         var host = uri.Host.ToLowerInvariant();
-        Console.WriteLine($"DEBUG IsUrlSafeAsync: host={host}");
         if (host == "localhost") return false;
 
         try
