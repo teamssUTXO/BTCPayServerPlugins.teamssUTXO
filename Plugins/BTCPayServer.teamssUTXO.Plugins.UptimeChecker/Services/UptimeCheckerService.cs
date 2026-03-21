@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Net;
 using BTCPayServer.Data;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Models;
 using Dapper;
@@ -141,8 +142,21 @@ public class UptimeCheckerService : IHostedService, IDisposable
     /// <summary>
     /// Performs HTTP check against a raw URL string (to initialize the state of a check – UP/DOWN).
     /// </summary>
-    public Task<UptimeCheckResult> CheckUrlAsync(string url, CancellationToken ct = default) =>
-        CheckUrlAsync(new UptimeCheck { Url = url }, ct);
+    public async Task<UptimeCheckResult> CheckUrlAsync(string url, CancellationToken ct = default)
+    {
+        var result = await IsUrlSafeAsync(url, ct);
+        if (!result)
+        {
+            return new UptimeCheckResult
+            {
+                IsUp = false,
+                ErrorMessage = "URL rejected.",
+                CheckedAt = DateTimeOffset.UtcNow
+            };
+        }
+
+        return await CheckUrlAsync(new UptimeCheck { Url = url }, ct);
+    }
 
     /// <summary>
     /// Performs the actual HTTP GET request and returns the result.
@@ -153,6 +167,19 @@ public class UptimeCheckerService : IHostedService, IDisposable
         var client = _httpClientFactory.CreateClient("UptimeChecker");
         var stw = Stopwatch.StartNew();
 
+        if (!await IsUrlSafeAsync(check.Url, ct))
+        {
+            return new UptimeCheckResult
+            {
+                CheckId = check.Id,
+                Url = check.Url,
+                IsUp = false,
+                HttpStatusCode = null,
+                ErrorMessage = "URL rejected.",
+                CheckedAt = checkedAt,
+                CheckDurationMs = stw.ElapsedMilliseconds
+            };
+        }
 
         try
         {
@@ -188,6 +215,63 @@ public class UptimeCheckerService : IHostedService, IDisposable
                 CheckDurationMs = stw.ElapsedMilliseconds
             };
         }
+    }
+
+    private static async Task<bool> IsUrlSafeAsync(string url, CancellationToken ct = default)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+
+        if (uri.Scheme != "http" && uri.Scheme != "https")
+            return false;
+
+        var host = uri.Host.ToLowerInvariant();
+        Console.WriteLine($"DEBUG IsUrlSafeAsync: host={host}");
+        if (host == "localhost") return false;
+
+        try
+        {
+            var addresses = await Dns.GetHostAddressesAsync(uri.Host, ct);
+            foreach (var ip in addresses)
+            {
+                if (IsPrivateOrLoopback(ip))
+                    return false;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool IsPrivateOrLoopback(IPAddress ip)
+    {
+        if (IPAddress.IsLoopback(ip)) return true;
+
+        var bytes = ip.GetAddressBytes();
+
+        // IPv4
+        if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+        {
+            return bytes[0] == 0 || // 0.0.0.0
+                   bytes[0] == 10 || // 10.x.x.x
+                   bytes[0] == 127 ||  // 127.x.x.x
+                   (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) || // 172.16-31.x.x
+                   (bytes[0] == 192 && bytes[1] == 168) || // 192.168.x.x
+                   (bytes[0] == 169 && bytes[1] == 254); // 169.254.x.x (AWS metadata)
+        }
+
+        // IPv6
+        if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+        {
+            return ip.IsIPv6LinkLocal ||
+                   ip.IsIPv6SiteLocal ||
+                   ip.Equals(IPAddress.IPv6Loopback);
+        }
+
+        return true;
     }
 
     private async Task LoadChecksFromDatabaseAsync(CancellationToken ct)
