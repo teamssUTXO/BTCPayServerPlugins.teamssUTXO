@@ -1,3 +1,4 @@
+using System;
 using BTCPayServer.Abstractions.Contracts;
 using BTCPayServer.Abstractions.Models;
 using BTCPayServer.Data;
@@ -19,7 +20,8 @@ public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
     public override void Execute(IServiceCollection services)
     {
         services.AddUIExtension("store-integrations-nav", "UptimeCheckerNav");
-        services.AddHttpClient("UptimeChecker").ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler{AllowAutoRedirect = false});
+        services.AddHttpClient("UptimeChecker", client => { client.Timeout = TimeSpan.FromSeconds(45); })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddSingleton<SendEmailService>();
         services.AddSingleton<ChecksHistoryService>();
         services.AddSingleton<UptimeCheckerService>();
