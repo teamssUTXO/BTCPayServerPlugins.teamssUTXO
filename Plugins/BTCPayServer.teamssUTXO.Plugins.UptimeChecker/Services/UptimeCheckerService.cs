@@ -186,7 +186,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
         try
         {
-            using var response = await client.GetAsync(check.Url, ct);
+            using var response = await client.GetAsync(check.Url, HttpCompletionOption.ResponseHeadersRead, ct);
             stw.Stop();
 
             var code = (int)response.StatusCode;
@@ -335,6 +335,10 @@ public class UptimeCheckerService : IHostedService, IDisposable
             {
                 break;
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UptimeChecker: unexpected error in main loop, monitoring continues.");
+            }
 
             try
             {
@@ -345,6 +349,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
                 break;
             }
         }
+        _logger.LogInformation("UptimeChecker: monitoring loop stopped.");
     }
 
     /// <summary>
@@ -427,15 +432,22 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
         if (!isFirstRun && isTransition)
         {
-            if (result.IsUp)
+            try
             {
-                await _sendEmailService.SendMailUpAsync(check, result);
-                _logger.LogInformation("UptimeChecker: {Url} has been restored. Status: {StatusCode}", result.Url, result.HttpStatusCode);
+                if (result.IsUp)
+                {
+                    await _sendEmailService.SendMailUpAsync(check, result);
+                    _logger.LogInformation("UptimeChecker: {Url} has been restored. Status: {StatusCode}", result.Url, result.HttpStatusCode);
+                }
+                else
+                {
+                    await _sendEmailService.SendMailDownAsync(check, result);
+                    _logger.LogError("Uptime Checker: {Url} is down. Message: {StatusCode}", result.Url, result.HttpStatusCode);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await _sendEmailService.SendMailDownAsync(check, result);
-                _logger.LogError("Uptime Checker: {Url} is down. Message: {StatusCode}", result.Url, result.HttpStatusCode);
+                _logger.LogError(ex, "UptimeChecker: failed to send email for {Url}.", result.Url);
             }
 
         }
