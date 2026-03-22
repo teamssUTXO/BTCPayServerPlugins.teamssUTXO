@@ -33,6 +33,9 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
     private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(15); // adjust this to control how frequently the loop evaluates which checks are due to run
 
+    private DateTimeOffset _lastPurge = DateTimeOffset.MinValue; // MinValue ensures the first purge runs immediately on startup
+    private static readonly TimeSpan PurgeInterval = TimeSpan.FromHours(1);  // adjust this to control how frequently the loop purge old entries - lower values keep history cleaner but increase DB load
+
     public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ApplicationDbContextFactory dbContextFactory, ILogger<UptimeCheckerService> logger, ChecksHistoryService checksHistoryService)
     {
         _sendEmailService = sendEmailService;
@@ -326,6 +329,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
             try
             {
                 await RunDueChecksAsync(ct);
+                await RunPurgeIfDueAsync(ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -412,7 +416,6 @@ public class UptimeCheckerService : IHostedService, IDisposable
             if (settings.enable_history)
             {
                 await _checksHistoryService.AppendHistoryEntryAsync(updatedCheck, result, ct);
-                await _checksHistoryService.PurgeOldEntriesAsync(settings.retention_days, ct);
             }
         }
 
@@ -429,6 +432,31 @@ public class UptimeCheckerService : IHostedService, IDisposable
                 _logger.LogError("Uptime Checker: {Url} is down. Message: {StatusCode}", result.Url, result.HttpStatusCode);
             }
 
+        }
+    }
+
+    private async Task RunPurgeIfDueAsync(CancellationToken ct)
+    {
+        var now =  DateTimeOffset.UtcNow;
+
+        if (now - _lastPurge < PurgeInterval)
+            return;
+
+        try
+        {
+            var settings = await _checksHistoryService.GetHistorySettingsAsync(ct);
+            if (!settings.enable_history)
+            {
+                _lastPurge = now;
+                return;
+            }
+
+            await _checksHistoryService.PurgeOldEntriesAsync(settings.retention_days, ct);
+            _lastPurge = now;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UptimeChecker: failed to purge history entries.");
         }
     }
 

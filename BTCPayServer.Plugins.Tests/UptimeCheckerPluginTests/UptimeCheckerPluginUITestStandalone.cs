@@ -144,7 +144,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await toggle.WaitForAsync();
         if (await toggle.IsCheckedAsync())
             await toggle.UncheckAsync();
-        await Page.Locator("button[type='submit']").ClickAsync();
+        await Page.Locator("button[type='submit']").First.ClickAsync();
         await AssertSuccessMessage("History settings saved.");
 
         await toggle.WaitForAsync();
@@ -175,7 +175,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         Assert.True(await retentionSection.IsVisibleAsync());
 
         // Save settings
-        await Page.Locator("button[type='submit']").ClickAsync();
+        await Page.Locator("button[type='submit']").First.ClickAsync();
         await AssertSuccessMessage("History settings saved.");
 
         // After save, toggle should remain checked and retention section visible
@@ -206,11 +206,11 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await retentionInput.ClearAsync();
         await retentionInput.FillAsync("366");
 
-        await Page.Locator("button[type='submit']").ClickAsync();
+        await Page.Locator("button[type='submit']").First.ClickAsync();
 
         // HTML validation
         var navigationTask = Page.WaitForNavigationAsync();
-        await Page.Locator("button[type='submit']").ClickAsync();
+        await Page.Locator("button[type='submit']").First.ClickAsync();
         var navigated = await Task.WhenAny(navigationTask, Task.Delay(2000)) == navigationTask;
         Assert.False(navigated);
 
@@ -221,7 +221,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await retentionInput.FillAsync("366");
         await Page.RunAndWaitForNavigationAsync(async () =>
         {
-            await Page.Locator("button[type='submit']").ClickAsync();
+            await Page.Locator("button[type='submit']").First.ClickAsync();
         });
         var validationError = Page.Locator(".alert-danger", new PageLocatorOptions { HasText = "Invalid retention period. Must be between 1 and 365 days." });
         await validationError.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
@@ -239,14 +239,14 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         var toggle = Page.Locator("#enableHistoryToggle");
         await toggle.WaitForAsync();
         await toggle.CheckAsync();
-        await Page.Locator("button[type='submit']").ClickAsync();
+        await Page.Locator("button[type='submit']").First.ClickAsync();
         await FindAlertMessageAsync();
 
         // Now disable and save again
         var toggle2 = Page.Locator("#enableHistoryToggle");
         await toggle2.WaitForAsync();
         await toggle2.UncheckAsync();
-        await Page.Locator("button[type='submit']").ClickAsync();
+        await Page.Locator("button[type='submit']").First.ClickAsync();
         await AssertSuccessMessage("History settings saved.");
 
         // Toggle should be unchecked, disabled message should be back
