@@ -10,7 +10,7 @@
     <PropertyGroup>
         <Product>Uptime Checker</Product>
         <Description>This plugin gives server admin a view of the uptime status across store instances</Description>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
     </PropertyGroup>
     <!-- Plugin development properties -->
     <PropertyGroup>
