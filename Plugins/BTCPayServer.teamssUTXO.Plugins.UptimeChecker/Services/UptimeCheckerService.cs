@@ -365,20 +365,26 @@ public class UptimeCheckerService : IHostedService, IDisposable
         }
 
         var now = DateTimeOffset.UtcNow;
+        var dueChecks = snapshot
+            .Where(c => c.IsEnabled && c.NextCheckAt <= now)
+            .ToList();
 
-        foreach (var check in snapshot)
+        // Limite à 10 checks simultanés pour ne pas surcharger le réseau
+        var semaphore = new SemaphoreSlim(10);
+        var tasks = dueChecks.Select(async check =>
         {
-            if (ct.IsCancellationRequested)
-                break;
+            await semaphore.WaitAsync(ct);
+            try
+            {
+                await RunSingleCheckAsync(check, ct);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
 
-            if (!check.IsEnabled)
-                continue;
-
-            if (check.NextCheckAt > now)
-                continue;
-
-            await RunSingleCheckAsync(check, ct);
-        }
+        await Task.WhenAll(tasks);
     }
 
     private async Task RunSingleCheckAsync(UptimeCheck check, CancellationToken ct)
