@@ -134,7 +134,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
         await _checksLock.WaitAsync();
         try
         {
-            return _checks.AsReadOnly();
+            return _checks.ToList();
         }
         finally
         {
