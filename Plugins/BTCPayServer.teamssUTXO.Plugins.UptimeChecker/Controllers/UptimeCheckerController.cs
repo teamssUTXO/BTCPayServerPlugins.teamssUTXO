@@ -9,6 +9,7 @@ using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MimeKit;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
@@ -39,6 +40,16 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
         if (!ModelState.IsValid)
             return View("Edit", vm);
 
+        var parsedEmails = ParseEmails(vm.NotificationEmailsRaw);
+        var rawCount = vm.NotificationEmailsRaw?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Count(e => !string.IsNullOrWhiteSpace(e)) ?? 0;
+        if (parsedEmails.Count == 0)
+        {
+            TempData[WellKnownTempData.ErrorMessage] = "No valid email addresses were found. Please check your input.";
+            return View("Edit", vm);
+        }
+
         // Initialize the state of the checked URL
         var initialResult = await uptimeCheckerService.CheckUrlAsync(vm.Url);
 
@@ -47,7 +58,7 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
             Url = vm.Url,
             IntervalMinutes = vm.IntervalMinutes,
             IsEnabled = vm.IsEnabled,
-            NotificationEmails = ParseEmails(vm.NotificationEmailsRaw),
+            NotificationEmails = parsedEmails,
             LastResult = initialResult,
             LastKnownIsUp = initialResult.IsUp,
             NextCheckAt = DateTimeOffset.UtcNow.AddMinutes(vm.IntervalMinutes)
@@ -55,7 +66,11 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
 
         await uptimeCheckerService.AddOrUpdateCheckAsync(check);
 
-        TempData[WellKnownTempData.SuccessMessage] = $"Check for {check.Url} created successfully.";
+        var message = parsedEmails.Count < rawCount
+            ? $"Check for {check.Url} created successfully. Some email addresses were invalid and have been ignored."
+            : $"Check for {check.Url} created successfully.";
+        TempData[WellKnownTempData.SuccessMessage] = message;
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -88,6 +103,16 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
         if (!ModelState.IsValid)
             return View(vm);
 
+        var parsedEmails = ParseEmails(vm.NotificationEmailsRaw);
+        var rawCount = vm.NotificationEmailsRaw?
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Count(e => !string.IsNullOrWhiteSpace(e)) ?? 0;
+        if (parsedEmails.Count == 0)
+        {
+            TempData[WellKnownTempData.ErrorMessage] = "No valid email addresses were found. Please check your input.";
+            return View("Edit", vm);
+        }
+
         var checks = await uptimeCheckerService.GetChecksAsync();
         var existingCheck = checks.FirstOrDefault(c => c.Id == id);
 
@@ -111,7 +136,7 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
             Url = vm.Url,
             IntervalMinutes = vm.IntervalMinutes,
             IsEnabled = isEnabled,
-            NotificationEmails = ParseEmails(vm.NotificationEmailsRaw),
+            NotificationEmails = parsedEmails,
             LastResult = lastResult,
             LastKnownIsUp = lastKnownIsUp,
             NextCheckAt = existingCheck.NextCheckAt
@@ -119,7 +144,11 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
 
         await uptimeCheckerService.AddOrUpdateCheckAsync(updatedCheck);
 
-        TempData[WellKnownTempData.SuccessMessage] = $"Check for {updatedCheck.Url} updated successfully.";
+        var message = parsedEmails.Count < rawCount
+            ? $"Check for {updatedCheck.Url} updated successfully. Some email addresses were invalid and have been ignored."
+            : $"Check for {updatedCheck.Url} updated successfully.";
+        TempData[WellKnownTempData.SuccessMessage] = message;
+
         return RedirectToAction(nameof(Index));
     }
 
@@ -181,5 +210,19 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
             .Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(e => e.Trim())
             .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Where(IsValidEmail)
             .ToList();
+
+    private static bool IsValidEmail(string email)
+    {
+        try
+        {
+            _ = new System.Net.Mail.MailAddress(email);
+            return email.Contains('@') && email.Split('@')[1].Contains('.');
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
 }
