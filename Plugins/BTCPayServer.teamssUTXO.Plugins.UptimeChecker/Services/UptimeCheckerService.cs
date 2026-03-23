@@ -147,8 +147,8 @@ public class UptimeCheckerService : IHostedService, IDisposable
     /// </summary>
     public async Task<UptimeCheckResult> CheckUrlAsync(string url, CancellationToken ct = default)
     {
-        var result = await IsUrlSafeAsync(url, ct);
-        if (!result)
+        var (isSafe, resolvedIp) = await IsUrlSafeAsync(url, ct);
+        if (!isSafe || resolvedIp is null)
         {
             return new UptimeCheckResult
             {
@@ -170,7 +170,8 @@ public class UptimeCheckerService : IHostedService, IDisposable
         var client = _httpClientFactory.CreateClient("UptimeChecker");
         var stw = Stopwatch.StartNew();
 
-        if (!await IsUrlSafeAsync(check.Url, ct))
+        var (isSafe, resolvedIp) = await IsUrlSafeAsync(check.Url, ct);
+        if (!isSafe || resolvedIp is null)
         {
             return new UptimeCheckResult
             {
@@ -186,7 +187,12 @@ public class UptimeCheckerService : IHostedService, IDisposable
 
         try
         {
-            using var response = await client.GetAsync(check.Url, HttpCompletionOption.ResponseHeadersRead, ct);
+            var uri = new Uri(check.Url);
+            var requestUri = new UriBuilder(uri) { Host = resolvedIp.ToString() }.Uri;
+            var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
+            request.Headers.Host = uri.Host;
+
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             stw.Stop();
 
             var code = (int)response.StatusCode;
@@ -220,16 +226,16 @@ public class UptimeCheckerService : IHostedService, IDisposable
         }
     }
 
-    private static async Task<bool> IsUrlSafeAsync(string url, CancellationToken ct = default)
+    private static async Task<(bool, IPAddress?)> IsUrlSafeAsync(string url, CancellationToken ct = default)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return false;
+            return (false, null);
 
         if (uri.Scheme != "http" && uri.Scheme != "https")
-            return false;
+            return (false, null);
 
         var host = uri.Host.ToLowerInvariant();
-        if (host == "localhost") return false;
+        if (host == "localhost") return (false, null);
 
         try
         {
@@ -237,15 +243,15 @@ public class UptimeCheckerService : IHostedService, IDisposable
             foreach (var ip in addresses)
             {
                 if (IsPrivateOrLoopback(ip))
-                    return false;
+                    return (false, null);
             }
+
+            return (true, addresses.FirstOrDefault());
         }
         catch
         {
-            return false;
+            return (false, null);
         }
-
-        return true;
     }
 
     private static bool IsPrivateOrLoopback(IPAddress ip)
