@@ -199,8 +199,16 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
             TempData[WellKnownTempData.ErrorMessage] = "Invalid retention period. Must be between 1 and 365 days.";
             return RedirectToAction(nameof(History));
         }
-        await checksHistoryService.SaveHistorySettingsAsync(vm.EnableHistory, vm.RetentionDays);
-        TempData[WellKnownTempData.SuccessMessage] = "History settings saved.";
+        try
+        {
+            await checksHistoryService.SaveHistorySettingsAsync(vm.EnableHistory, vm.RetentionDays);
+            TempData[WellKnownTempData.SuccessMessage] = "Settings saved successfully.";
+        }
+        catch (Exception ex)
+        {
+            TempData[WellKnownTempData.ErrorMessage] = "Failed to save settings. Please try again.";
+        }
+
         return RedirectToAction(nameof(History));
     }
 

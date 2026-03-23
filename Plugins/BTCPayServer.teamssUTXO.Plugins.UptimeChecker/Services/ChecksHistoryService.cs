@@ -94,6 +94,7 @@ public class ChecksHistoryService : IDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "UptimeChecker: failed to save history settings.");
+            throw;
         }
     }
 
