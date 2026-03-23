@@ -14,6 +14,7 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
 
 [Route("server/uptimechecker")]
+[AutoValidateAntiforgeryToken]
 [Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
 public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, ChecksHistoryService checksHistoryService) : Controller
 {
