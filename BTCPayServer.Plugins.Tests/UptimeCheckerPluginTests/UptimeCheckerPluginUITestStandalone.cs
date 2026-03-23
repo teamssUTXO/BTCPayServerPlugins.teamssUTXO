@@ -162,7 +162,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         if (await toggle.IsCheckedAsync())
             await toggle.UncheckAsync();
         await Page.Locator("button[type='submit']").First.ClickAsync();
-        await AssertSuccessMessage("History settings saved.");
+        await AssertSuccessMessage("History settings saved successfully.");
 
         await toggle.WaitForAsync();
         Assert.False(await toggle.IsCheckedAsync());
@@ -193,7 +193,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
 
         // Save settings
         await Page.Locator("button[type='submit']").First.ClickAsync();
-        await AssertSuccessMessage("History settings saved.");
+        await AssertSuccessMessage("History settings saved successfully.");
 
         // After save, toggle should remain checked and retention section visible
         var toggleAfter = Page.Locator("#enableHistoryToggle");
@@ -264,7 +264,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await toggle2.WaitForAsync();
         await toggle2.UncheckAsync();
         await Page.Locator("button[type='submit']").First.ClickAsync();
-        await AssertSuccessMessage("History settings saved.");
+        await AssertSuccessMessage("History settings saved successfully.");
 
         // Toggle should be unchecked, disabled message should be back
         var toggleAfter = Page.Locator("#enableHistoryToggle");
@@ -293,7 +293,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await retentionInput.FillAsync("30");
 
         await Page.Locator("button[type='submit']").ClickAsync();
-        await AssertSuccessMessage("History settings saved.");
+        await AssertSuccessMessage("History settings saved successfully.");
 
         // Reload the page and confirm the value persisted
         await GoToUrl("/server/uptimechecker/history");

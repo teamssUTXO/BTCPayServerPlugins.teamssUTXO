@@ -202,11 +202,11 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
         try
         {
             await checksHistoryService.SaveHistorySettingsAsync(vm.EnableHistory, vm.RetentionDays);
-            TempData[WellKnownTempData.SuccessMessage] = "Settings saved successfully.";
+            TempData[WellKnownTempData.SuccessMessage] = "History settings saved successfully.";
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            TempData[WellKnownTempData.ErrorMessage] = "Failed to save settings. Please try again.";
+            TempData[WellKnownTempData.ErrorMessage] = "History failed to save settings. Please try again.";
         }
 
         return RedirectToAction(nameof(History));
