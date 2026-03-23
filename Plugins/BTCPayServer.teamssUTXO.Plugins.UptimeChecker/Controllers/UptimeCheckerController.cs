@@ -9,7 +9,6 @@ using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services;
 using BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MimeKit;
 
 namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 
