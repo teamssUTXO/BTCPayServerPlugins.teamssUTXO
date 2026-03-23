@@ -380,7 +380,10 @@ public class UptimeCheckerService : IHostedService, IDisposable
             .Where(c => c.IsEnabled && c.NextCheckAt <= now)
             .ToList();
 
-        // Limite à 10 checks simultanés pour ne pas surcharger le réseau
+        foreach (var check in dueChecks)
+            check.NextCheckAt = DateTimeOffset.UtcNow.AddMinutes(check.IntervalMinutes);
+
+        // Limit to 10 simultaneous checks to avoid overloading the network
         var semaphore = new SemaphoreSlim(10);
         var tasks = dueChecks.Select(async check =>
         {
