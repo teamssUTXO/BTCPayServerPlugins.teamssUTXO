@@ -5,7 +5,6 @@
         <LangVersion>12</LangVersion>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-    <!-- -->
     <!-- Plugin specific properties -->
     <PropertyGroup>
         <Product>Uptime Checker</Product>
@@ -36,9 +35,8 @@
       <PackageReference Include="MailKit" Version="4.15.1" />
     </ItemGroup>
 
-    <ItemGroup>
-      <UpToDateCheckInput Remove="Views\Shared\UptimeCheckerNav.cshtml" />
-      <UpToDateCheckInput Remove="Views\UptimeCheckerPublic\Status.cshtml" />
-    </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Views\**\*.cshtml" />
+  </ItemGroup>
 
 </Project>
