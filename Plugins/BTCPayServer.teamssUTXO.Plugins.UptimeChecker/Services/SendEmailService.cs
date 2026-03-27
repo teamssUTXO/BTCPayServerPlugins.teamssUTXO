@@ -80,6 +80,41 @@ public class SendEmailService
         }
     }
 
+    /// <summary>
+    /// Sends a "unsynced node" alert
+    /// </summary>
+    public async Task SendSyncDownMailAsync(string network, DateTimeOffset checkedAt, string? details, string recipientEmail)
+    {
+        if (string.IsNullOrWhiteSpace(recipientEmail))
+            return;
+
+        var sender = await _emailSenderFactory.GetEmailSender();
+
+        var subject = $"[NODE UNSYNCED] {network} node is out of sync";
+
+        var body = BuildSyncDownBody(network, checkedAt, details, recipientEmail);
+        var mailbox = new MailboxAddress(recipientEmail, recipientEmail);
+        sender.SendEmail(mailbox, subject, body);
+    }
+
+    /// <summary>
+    /// Sends a "resynced node" alert
+    /// </summary>
+    public async Task SendSyncUpMailAsync(string network, DateTimeOffset checkedAt, string? details, string recipientEmail)
+    {
+        if (string.IsNullOrWhiteSpace(recipientEmail))
+            return;
+
+        var sender = await _emailSenderFactory.GetEmailSender();
+
+        var subject = $"[NODE RESYNCED] {network} node is synchronized again";
+
+        var body = BuildSyncUpBody(network, checkedAt, details, recipientEmail);
+        var mailbox = new MailboxAddress(recipientEmail, recipientEmail);
+        sender.SendEmail(mailbox, subject, body);
+    }
+
+
     private string BuildDownBody(UptimeCheckResult result, string recipientEmail)
     {
         var rows = new List<string>
@@ -116,6 +151,39 @@ public class SendEmailService
         var content =
             $"<p>The following service has <strong style='color:#27ae60'>recovered</strong> and is back online.</p>" +
             $"<table style='border-collapse:collapse;margin:12px 0'>{string.Join(Environment.NewLine, rows)}</table>";
+
+        return EmailsPlugin.CreateEmailBody(content + BuildFooter(recipientEmail));
+    }
+
+    public string BuildSyncDownBody(string network, DateTimeOffset checkedAt, string? details, string recipientEmail)
+    {
+        var content =
+            $"<p>Your BTCPay Server node monitoring detected a synchronization issue.</p>" +
+            $"<table style='border-collapse:collapse;margin:12px 0'>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Network</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(network)}</td></tr>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Checked at</td><td style='padding:4px 0'>{checkedAt:u}</td></tr>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Status</td><td style='padding:4px 0'><strong style='color:#c0392b'>OUT OF SYNC</strong></td></tr>" +
+            (string.IsNullOrWhiteSpace(details)
+                ? string.Empty
+                : $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Details</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(details)}</td></tr>") +
+            $"</table>" +
+            $"<p style='color:#555;font-size:0.9em'>An additional alert will be sent when the node is synchronized again.</p>";
+
+        return EmailsPlugin.CreateEmailBody(content + BuildFooter(recipientEmail));
+    }
+
+    public string BuildSyncUpBody(string network, DateTimeOffset checkedAt, string? details, string recipientEmail)
+    {
+        var content =
+            $"<p>Your BTCPay Server node synchronization has recovered.</p>" +
+            $"<table style='border-collapse:collapse;margin:12px 0'>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Network</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(network)}</td></tr>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Recovered at</td><td style='padding:4px 0'>{checkedAt:u}</td></tr>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Status</td><td style='padding:4px 0'><strong style='color:#27ae60'>SYNCHRONIZED</strong></td></tr>" +
+            (string.IsNullOrWhiteSpace(details)
+                ? string.Empty
+                : $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Details</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(details)}</td></tr>") +
+            $"</table>";
 
         return EmailsPlugin.CreateEmailBody(content + BuildFooter(recipientEmail));
     }
