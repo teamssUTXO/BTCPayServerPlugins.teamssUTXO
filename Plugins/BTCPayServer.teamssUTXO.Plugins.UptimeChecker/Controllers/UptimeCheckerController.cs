@@ -216,13 +216,10 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
     public async Task<IActionResult> SyncAlert()
     {
         var settings = await syncAlertService.GetSyncAlertSettingsAsync();
-        var ownerEmail = await syncAlertService.GetOwnerEmailAsync();
-        var recipient = string.IsNullOrWhiteSpace(ownerEmail) ? "not configured" : ownerEmail;
 
         return View(new SyncAlertSettingsViewModel
         {
-            EnableSyncAlerts = settings.enable_sync_alerts,
-            SyncAlertRecipientEmail = recipient
+            EnableSyncAlerts = settings.enable_sync_alerts
         });
     }
 

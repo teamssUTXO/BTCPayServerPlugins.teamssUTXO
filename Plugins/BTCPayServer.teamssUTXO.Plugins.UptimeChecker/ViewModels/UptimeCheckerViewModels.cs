@@ -19,7 +19,6 @@ public class UptimeCheckListViewModel
 public class SyncAlertSettingsViewModel
 {
     public bool EnableSyncAlerts { get; set; }
-    public string SyncAlertRecipientEmail { get; set; } = "not configured";
 }
 
 public class UptimeCheckFormViewModel
