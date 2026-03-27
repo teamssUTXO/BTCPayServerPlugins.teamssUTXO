@@ -1,6 +1,5 @@
 @using BTCPayServer.Abstractions.Extensions
 @using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
-@using BTCPayServer.Abstractions.Models
 @model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.SyncAlertSettingsViewModel
 @{
     Layout = "_Layout";
@@ -22,18 +21,12 @@
         </div>
 
         <form method="post" asp-action="SyncAlert">
-            <input asp-for="EnableSyncAlerts" type="hidden" value="@Model.EnableSyncAlerts.ToString().ToLowerInvariant()" />
             @if (Model.EnableSyncAlerts)
             {
                 <button type="submit"
                         class="btn btn-outline-warning"
-                        name="EnableyncAlerts"
-                        value="false"
-                        data-bs-toggle="modal"
-                        data-bs-target="#ConfirmModal"
-                        data-title="Disable node sync alerts"
-                        data-description="Only the node owner's email (<strong>@Model.SyncAlertRecipientEmail</strong>) receives these alerts."
-                        data-confirm="Disable">
+                        name="EnableSyncAlerts"
+                        value="false">
                     Disable Sync Alerts
                 </button>
             }
@@ -42,17 +35,10 @@
                 <button type="submit"
                         class="btn btn-warning"
                         name="EnableSyncAlerts"
-                        value="true"
-                        data-bs-toggle="modal"
-                        data-bs-target="#ConfirmModal"
-                        data-title="Enable node sync alerts"
-                        data-description="Only the node owner's email (<strong>@Model.SyncAlertRecipientEmail</strong>) receives these alerts."
-                        data-confirm="Enable">
+                        value="true">
                     Enable Sync Alerts
                 </button>
             }
         </form>
     </div>
 </div>
-
-<partial name="_Confirm" model="@(new ConfirmModel("Node sync alerts", "Only the node owner receives these alerts.", "Confirm"))" />
