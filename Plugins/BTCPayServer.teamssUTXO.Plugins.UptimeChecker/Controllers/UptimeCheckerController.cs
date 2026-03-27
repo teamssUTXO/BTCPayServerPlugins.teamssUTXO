@@ -16,7 +16,7 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Controllers;
 [Route("server/uptimechecker")]
 [AutoValidateAntiforgeryToken]
 [Authorize(Policy = Policies.CanModifyServerSettings, AuthenticationSchemes = AuthenticationSchemes.Cookie)]
-public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, ChecksHistoryService checksHistoryService) : Controller
+public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, ChecksHistoryService checksHistoryService, SyncAlertService syncAlertService) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index()
@@ -210,6 +210,38 @@ public class UptimeCheckerController(UptimeCheckerService uptimeCheckerService, 
         }
 
         return RedirectToAction(nameof(History));
+    }
+
+    [HttpGet("sync")]
+    public async Task<IActionResult> SyncAlert()
+    {
+        var settings = await syncAlertService.GetSyncAlertSettingsAsync();
+        var ownerEmail = await syncAlertService.GetOwnerEmailAsync();
+        var recipient = string.IsNullOrWhiteSpace(ownerEmail) ? "not configured" : ownerEmail;
+
+        return View(new SyncAlertSettingsViewModel
+        {
+            EnableSyncAlerts = settings.enable_sync_alerts,
+            SyncAlertRecipientEmail = recipient
+        });
+    }
+
+    [HttpPost("sync")]
+    public async Task<IActionResult> SyncAlert(SyncAlertSettingsViewModel vm)
+    {
+        try
+        {
+            await syncAlertService.SaveSyncAlertSettingsAsync(vm.EnableSyncAlerts);
+            TempData[WellKnownTempData.SuccessMessage] = vm.EnableSyncAlerts
+                ? "Node sync alerts enabled."
+                : "Node sync alerts disabled.";
+        }
+        catch (Exception)
+        {
+            TempData[WellKnownTempData.ErrorMessage] = "Failed to save node sync alert settings. Please try again.";
+        }
+
+        return RedirectToAction(nameof(SyncAlert));
     }
 
     private static List<string> ParseEmails(string? raw) =>

@@ -16,6 +16,12 @@ public class UptimeCheckListViewModel
     public IReadOnlyList<UptimeCheck> Checks { get; set; } = new List<UptimeCheck>();
 }
 
+public class SyncAlertSettingsViewModel
+{
+    public bool EnableSyncAlerts { get; set; }
+    public string SyncAlertRecipientEmail { get; set; } = "not configured";
+}
+
 public class UptimeCheckFormViewModel
 {
     public string? Id { get; set; }

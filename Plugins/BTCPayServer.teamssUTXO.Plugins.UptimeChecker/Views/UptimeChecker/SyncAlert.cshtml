@@ -1,0 +1,58 @@
+@using BTCPayServer.Abstractions.Extensions
+@using BTCPayServer.teamssUTXO.Plugins.UptimeChecker
+@using BTCPayServer.Abstractions.Models
+@model BTCPayServer.teamssUTXO.Plugins.UptimeChecker.ViewModels.SyncAlertSettingsViewModel
+@{
+    Layout = "_Layout";
+    ViewData.SetActivePage(PluginNavPages.UptimeChecker, "Node Sync Alerts");
+}
+
+<div class="sticky-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h2 class="mb-0">@ViewData["Title"]</h2>
+    <a asp-action="Index" class="btn btn-secondary">Back to checks</a>
+</div>
+
+<partial name="_StatusMessage" />
+
+<div class="row mt-4">
+    <div>
+        <h4 class="mb-3">Node synchronization alerts</h4>
+        <div class="alert alert-warning" role="alert">
+            Only the node owner's email (<strong>@Model.SyncAlertRecipientEmail</strong>) receives sync alert notifications.
+        </div>
+
+        <form method="post" asp-action="SyncAlert">
+            <input asp-for="EnableSyncAlerts" type="hidden" value="@Model.EnableSyncAlerts.ToString().ToLowerInvariant()" />
+            @if (Model.EnableSyncAlerts)
+            {
+                <button type="submit"
+                        class="btn btn-outline-warning"
+                        name="EnableyncAlerts"
+                        value="false"
+                        data-bs-toggle="modal"
+                        data-bs-target="#ConfirmModal"
+                        data-title="Disable node sync alerts"
+                        data-description="Only the node owner's email (<strong>@Model.SyncAlertRecipientEmail</strong>) receives these alerts."
+                        data-confirm="Disable">
+                    Disable Sync Alerts
+                </button>
+            }
+            else
+            {
+                <button type="submit"
+                        class="btn btn-warning"
+                        name="EnableSyncAlerts"
+                        value="true"
+                        data-bs-toggle="modal"
+                        data-bs-target="#ConfirmModal"
+                        data-title="Enable node sync alerts"
+                        data-description="Only the node owner's email (<strong>@Model.SyncAlertRecipientEmail</strong>) receives these alerts."
+                        data-confirm="Enable">
+                    Enable Sync Alerts
+                </button>
+            }
+        </form>
+    </div>
+</div>
+
+<partial name="_Confirm" model="@(new ConfirmModel("Node sync alerts", "Only the node owner receives these alerts.", "Confirm"))" />
