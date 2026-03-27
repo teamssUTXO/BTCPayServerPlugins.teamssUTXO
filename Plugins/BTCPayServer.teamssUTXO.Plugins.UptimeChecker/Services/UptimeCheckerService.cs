@@ -23,6 +23,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
     private readonly ApplicationDbContextFactory _dbContextFactory;
     private readonly ILogger<UptimeCheckerService> _logger;
     private readonly ChecksHistoryService _checksHistoryService;
+    private readonly SyncAlertService _syncAlertService;
 
     // checks restored from DB on startup
     private readonly List<UptimeCheck> _checks = new();
@@ -36,19 +37,21 @@ public class UptimeCheckerService : IHostedService, IDisposable
     private DateTimeOffset _lastPurge = DateTimeOffset.MinValue; // MinValue ensures the first purge runs immediately on startup
     private static readonly TimeSpan PurgeInterval = TimeSpan.FromHours(1);  // adjust this to control how frequently the loop purge old entries - lower values keep history cleaner but increase DB load
 
-    public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ApplicationDbContextFactory dbContextFactory, ILogger<UptimeCheckerService> logger, ChecksHistoryService checksHistoryService)
+    public UptimeCheckerService(SendEmailService sendEmailService, IHttpClientFactory httpClientFactory, ApplicationDbContextFactory dbContextFactory, ILogger<UptimeCheckerService> logger, ChecksHistoryService checksHistoryService, SyncAlertService syncAlertService)
     {
         _sendEmailService = sendEmailService;
         _httpClientFactory = httpClientFactory;
         _dbContextFactory = dbContextFactory;
         _logger = logger;
         _checksHistoryService = checksHistoryService;
+        _syncAlertService = syncAlertService;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await LoadChecksFromDatabaseAsync(cancellationToken);
         await _checksHistoryService.LoadSettingsFromDatabaseAsync(cancellationToken);
+        await _syncAlertService.LoadSettingsFromDatabaseAsync(cancellationToken);
 
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _loopTask = RunLoopAsync(_cts.Token);
@@ -336,6 +339,7 @@ public class UptimeCheckerService : IHostedService, IDisposable
             {
                 await RunDueChecksAsync(ct);
                 await RunPurgeIfDueAsync(ct);
+                await _syncAlertService.RunSyncCheckIfDueAsync(ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {

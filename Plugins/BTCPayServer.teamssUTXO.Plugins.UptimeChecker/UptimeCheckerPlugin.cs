@@ -26,6 +26,7 @@ public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddSingleton<SendEmailService>();
         services.AddSingleton<ChecksHistoryService>();
+        services.AddSingleton<SyncAlertService>();
         services.AddSingleton<UptimeCheckerService>();
         services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<UptimeCheckerService>());
         services.AddMigration<ApplicationDbContext, CreateUptimeCheckerTableMigration>();
