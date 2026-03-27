@@ -90,7 +90,7 @@ public class SendEmailService
 
         var sender = await _emailSenderFactory.GetEmailSender();
 
-        var subject = $"[NODE UNSYNCED] {network} node is out of sync";
+        var subject = $"[NODE UNSYNCED] Node out of sync ({network})";
 
         var body = BuildSyncDownBody(network, checkedAt, details, recipientEmail);
         var mailbox = new MailboxAddress(recipientEmail, recipientEmail);
@@ -107,7 +107,7 @@ public class SendEmailService
 
         var sender = await _emailSenderFactory.GetEmailSender();
 
-        var subject = $"[NODE RESYNCED] {network} node is synchronized again";
+        var subject = $"[NODE RESYNCED] Node synchronized again ({network})";
 
         var body = BuildSyncUpBody(network, checkedAt, details, recipientEmail);
         var mailbox = new MailboxAddress(recipientEmail, recipientEmail);
@@ -160,7 +160,7 @@ public class SendEmailService
         var content =
             $"<p>Your BTCPay Server node monitoring detected a synchronization issue.</p>" +
             $"<table style='border-collapse:collapse;margin:12px 0'>" +
-            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Network</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(network)}</td></tr>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Network(s)</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(network)}</td></tr>" +
             $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Checked at</td><td style='padding:4px 0'>{checkedAt:u}</td></tr>" +
             $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Status</td><td style='padding:4px 0'><strong style='color:#c0392b'>OUT OF SYNC</strong></td></tr>" +
             (string.IsNullOrWhiteSpace(details)
@@ -177,7 +177,7 @@ public class SendEmailService
         var content =
             $"<p>Your BTCPay Server node synchronization has recovered.</p>" +
             $"<table style='border-collapse:collapse;margin:12px 0'>" +
-            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Network</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(network)}</td></tr>" +
+            $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Network(s)</td><td style='padding:4px 0'>{System.Net.WebUtility.HtmlEncode(network)}</td></tr>" +
             $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Recovered at</td><td style='padding:4px 0'>{checkedAt:u}</td></tr>" +
             $"<tr><td style='padding:4px 12px 4px 0;font-weight:bold'>Status</td><td style='padding:4px 0'><strong style='color:#27ae60'>SYNCHRONIZED</strong></td></tr>" +
             (string.IsNullOrWhiteSpace(details)

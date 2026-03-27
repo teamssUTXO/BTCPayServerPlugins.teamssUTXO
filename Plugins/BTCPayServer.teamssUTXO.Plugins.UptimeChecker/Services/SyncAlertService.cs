@@ -21,12 +21,8 @@ public class SyncAlertService : IDisposable
     private readonly NBXplorerDashboard _nbXplorerDashboard;
 
     private SyncAlertSettings _settings = new();
-    private string? _ownerEmail;
+    private readonly System.Collections.Generic.Dictionary<string, bool> _lastKnownNetworkSynced = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _settingsLock = new(1, 1);
-
-    private static readonly TimeSpan SyncCheckInterval = TimeSpan.FromMinutes(1);
-    private DateTimeOffset _lastSyncCheck = DateTimeOffset.MinValue;
-    private bool? _lastKnownNodeSynced;
 
     public SyncAlertService(
         ApplicationDbContextFactory dbContextFactory,
@@ -54,13 +50,10 @@ public class SyncAlertService : IDisposable
                 LIMIT 1;
                 """);
 
-            var ownerEmail = await ResolveOwnerEmailAsync(ct);
-
             await _settingsLock.WaitAsync(ct);
             try
             {
                 _settings = row?.ToDomain() ?? new SyncAlertSettings();
-                _ownerEmail = ownerEmail;
             }
             finally
             {
@@ -86,19 +79,6 @@ public class SyncAlertService : IDisposable
         }
     }
 
-    public async Task<string?> GetOwnerEmailAsync(CancellationToken ct = default)
-    {
-        await _settingsLock.WaitAsync(ct);
-        try
-        {
-            return _ownerEmail;
-        }
-        finally
-        {
-            _settingsLock.Release();
-        }
-    }
-
     public async Task SaveSyncAlertSettingsAsync(bool enableSyncAlerts, CancellationToken ct = default)
     {
         try
@@ -112,13 +92,10 @@ public class SyncAlertService : IDisposable
                 SET "enable_sync_alerts" = EXCLUDED."enable_sync_alerts";
                 """, new { enableSyncAlerts });
 
-            var ownerEmail = await ResolveOwnerEmailAsync(ct);
-
             await _settingsLock.WaitAsync(ct);
             try
             {
                 _settings = new SyncAlertSettings { enable_sync_alerts = enableSyncAlerts };
-                _ownerEmail = ownerEmail;
             }
             finally
             {
@@ -132,7 +109,6 @@ public class SyncAlertService : IDisposable
         }
     }
 
-    // TODO : est appelé deux fois. faut le mettre en cache
     private async Task<string?> ResolveOwnerEmailAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
@@ -147,82 +123,109 @@ public class SyncAlertService : IDisposable
         return owner?.Email;
     }
 
-    //TODO : est hardcodé à 1 minute Pas configurable par l'admin — c'est un choix acceptable pour une v1 mais à noter
     public async Task RunSyncCheckIfDueAsync(CancellationToken ct)
     {
-        var now = DateTimeOffset.UtcNow;
-        if (now - _lastSyncCheck < SyncCheckInterval)
-            return;
-
-        _lastSyncCheck = now;
-
-        var settings = await GetSyncAlertSettingsAsync(ct);
+        var settings = await GetSyncSettingsAsync(ct);
         if (!settings.enable_sync_alerts)
             return;
 
-        var status = GetNodeSyncStatus();
-        if (status is null)
+        var summaries = _nbXplorerDashboard.GetAll()?.ToList();
+        if (summaries is null || summaries.Count == 0)
             return;
 
-        if (!_lastKnownNodeSynced.HasValue)
+        var transitions = new System.Collections.Generic.List<(bool IsSynced, string Network, string? Details)>();
+
+        foreach (var summary in summaries)
         {
-            _lastKnownNodeSynced = status.Value.IsSynced;
-            return;
+            if (summary?.Network is null)
+                continue;
+
+            var network = summary.Network.CryptoCode;
+            var isSynced = summary.Status?.IsFullySynched is true;
+
+            if (!_lastKnownNetworkSynced.TryGetValue(network, out var previous))
+            {
+                _lastKnownNetworkSynced[network] = isSynced;
+                continue;
+            }
+
+            if (previous == isSynced)
+                continue;
+
+            transitions.Add((isSynced, network, BuildSyncDetails(summary)));
+            _lastKnownNetworkSynced[network] = isSynced;
         }
 
-        if (_lastKnownNodeSynced.Value == status.Value.IsSynced)
+        if (transitions.Count == 0)
             return;
 
-        var ownerEmail = await GetOwnerEmailAsync(ct);
+        var ownerEmail = await ResolveOwnerEmailAsync(ct);
         if (string.IsNullOrWhiteSpace(ownerEmail))
         {
             _logger.LogWarning("UptimeChecker: sync alert state changed but no owner email is configured.");
-            _lastKnownNodeSynced = status.Value.IsSynced;
             return;
         }
 
-        try
+        var now = DateTimeOffset.UtcNow;
+        var unsyncedTransitions = transitions.Where(t => !t.IsSynced).ToList();
+        var syncedTransitions = transitions.Where(t => t.IsSynced).ToList();
+
+        if (unsyncedTransitions.Count > 0)
         {
-            if (status.Value.IsSynced)
+            try
             {
-                await _sendEmailService.SendSyncUpMailAsync(status.Value.Network, now, status.Value.Details, ownerEmail);
-                _logger.LogInformation("UptimeChecker: node sync recovered for {Network}.", status.Value.Network);
+                var networks = string.Join(", ", unsyncedTransitions.Select(t => t.Network).Distinct(StringComparer.OrdinalIgnoreCase));
+                var details = string.Join(" | ", unsyncedTransitions
+                    .Where(t => !string.IsNullOrWhiteSpace(t.Details))
+                    .Select(t => $"{t.Network}: {t.Details}"));
+
+                await _sendEmailService.SendSyncDownMailAsync(networks, now, string.IsNullOrWhiteSpace(details) ? null : details, ownerEmail);
+                _logger.LogWarning("UptimeChecker: node out of sync for network(s): {Networks}", networks);
             }
-            else
+            catch (Exception ex)
             {
-                await _sendEmailService.SendSyncDownMailAsync(status.Value.Network, now, status.Value.Details, ownerEmail);
-                _logger.LogWarning("UptimeChecker: node out of sync for {Network}. Details: {Details}", status.Value.Network, status.Value.Details);
+                _logger.LogError(ex, "UptimeChecker: failed to send grouped node sync down email.");
             }
+
+            if (syncedTransitions.Count > 0)
+            {
+                var skippedNetworks = string.Join(", ", syncedTransitions.Select(t => t.Network).Distinct(StringComparer.OrdinalIgnoreCase));
+                _logger.LogInformation("UptimeChecker: skipping sync recovery email because down transition(s) exist in the same tick. Skipped networks: {Networks}", skippedNetworks);
+            }
+
+            return;
         }
-        catch (Exception ex)
+
+        if (syncedTransitions.Count > 0)
         {
-            _logger.LogError(ex, "UptimeChecker: failed to send node sync alert email.");
-        }
-        finally
-        {
-            _lastKnownNodeSynced = status.Value.IsSynced;
+            try
+            {
+                var networks = string.Join(", ", syncedTransitions.Select(t => t.Network).Distinct(StringComparer.OrdinalIgnoreCase));
+                var details = string.Join(" | ", syncedTransitions
+                    .Where(t => !string.IsNullOrWhiteSpace(t.Details))
+                    .Select(t => $"{t.Network}: {t.Details}"));
+
+                await _sendEmailService.SendSyncUpMailAsync(networks, now, string.IsNullOrWhiteSpace(details) ? null : details, ownerEmail);
+                _logger.LogInformation("UptimeChecker: node sync recovered for network(s): {Networks}", networks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UptimeChecker: failed to send grouped node sync recovery email.");
+            }
         }
     }
 
-    // TODO : retourne le premier réseau non synchronisé. Si tu as BTC et LTC et que les deux sont désynchronisés, tu n'alertes que sur le premier.
-    private (bool IsSynced, string Network, string? Details)? GetNodeSyncStatus()
+    private async Task<SyncAlertSettings> GetSyncSettingsAsync(CancellationToken ct)
     {
-        var summaries = _nbXplorerDashboard.GetAll()?.ToList();
-        if (summaries is null || summaries.Count == 0)
-            return null;
-
-        var unsynced = summaries.FirstOrDefault(s => s?.Status?.IsFullySynched is not true);
-        if (unsynced is not null)
+        await _settingsLock.WaitAsync(ct);
+        try
         {
-            var details = BuildSyncDetails(unsynced);
-            return (false, unsynced.Network.CryptoCode, details);
+            return _settings.ToDomain();
         }
-
-        var synced = summaries.FirstOrDefault(s => s?.Status is not null);
-        if (synced is null)
-            return null;
-
-        return (true, synced.Network.CryptoCode, BuildSyncDetails(synced));
+        finally
+        {
+            _settingsLock.Release();
+        }
     }
 
     private static string? BuildSyncDetails(NBXplorerDashboard.NBXplorerSummary summary)
