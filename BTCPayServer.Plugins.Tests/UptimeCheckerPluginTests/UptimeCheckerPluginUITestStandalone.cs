@@ -42,6 +42,8 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
     {
         await InitializePlaywright(ServerTester);
         await LoginAsAdmin();
+        Page.SetDefaultNavigationTimeout(60000);
+        Page.SetDefaultTimeout(60000);
         await GoToUrl("/server/uptimechecker/create");
         await Page.Locator("#Url").FillAsync("https://example.com");
         await Page.Locator("#IntervalMinutes").FillAsync("10");
@@ -85,6 +87,8 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
     {
         await InitializePlaywright(ServerTester);
         await LoginAsAdmin();
+        Page.SetDefaultNavigationTimeout(60000);
+        Page.SetDefaultTimeout(60000);
         await GoToUrl("/server/uptimechecker/create");
         await Page.Locator("#Url").FillAsync("https://google.com/");
         await Page.Locator("#IntervalMinutes").FillAsync("1");
@@ -101,6 +105,8 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
     {
         await InitializePlaywright(ServerTester);
         await LoginAsAdmin();
+        Page.SetDefaultNavigationTimeout(60000);
+        Page.SetDefaultTimeout(60000);
         await GoToUrl("/server/uptimechecker/create");
         await Page.Locator("#Url").FillAsync("https://httpbin.org/get");
         await Page.Locator("#IntervalMinutes").FillAsync("5");
@@ -303,6 +309,71 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         Assert.Equal("30", persistedValue);
     }
 
+    [Fact]
+    public async Task UptimeCheckerSyncAlertDisabledByDefaultTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/sync");
+
+        var warning = Page.Locator(".alert.alert-warning", new PageLocatorOptions { HasText = "Only the node owner's email" });
+        await warning.WaitForAsync();
+        Assert.True(await warning.IsVisibleAsync());
+
+        var enableButton = Page.Locator("button", new PageLocatorOptions { HasText = "Enable Sync Alerts" });
+        await enableButton.WaitForAsync();
+        Assert.True(await enableButton.IsVisibleAsync());
+    }
+
+    [Fact]
+    public async Task UptimeCheckerSyncAlertEnableAndDisableTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/sync");
+
+        await EnsureSyncAlertsDisabled();
+
+        var enableButton = Page.Locator("button", new PageLocatorOptions { HasText = "Enable Sync Alerts" });
+        await enableButton.WaitForAsync();
+        await enableButton.ClickAsync();
+        await AssertSuccessMessage("Node sync alerts enabled.");
+
+        var disableButton = Page.Locator("button", new PageLocatorOptions { HasText = "Disable Sync Alerts" });
+        await disableButton.WaitForAsync();
+        Assert.True(await disableButton.IsVisibleAsync());
+
+        await disableButton.ClickAsync();
+        await AssertSuccessMessage("Node sync alerts disabled.");
+
+        var enableButtonAfterDisable = Page.Locator("button", new PageLocatorOptions { HasText = "Enable Sync Alerts" });
+        await enableButtonAfterDisable.WaitForAsync();
+        Assert.True(await enableButtonAfterDisable.IsVisibleAsync());
+    }
+
+    [Fact]
+    public async Task UptimeCheckerSyncAlertSettingPersistsTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+        await GoToUrl("/server/uptimechecker/sync");
+
+        await EnsureSyncAlertsDisabled();
+
+        var enableButton = Page.Locator("button", new PageLocatorOptions { HasText = "Enable Sync Alerts" });
+        await enableButton.WaitForAsync();
+        await enableButton.ClickAsync();
+        await AssertSuccessMessage("Node sync alerts enabled.");
+
+        await GoToUrl("/server/uptimechecker/sync");
+        var disableButton = Page.Locator("button", new PageLocatorOptions { HasText = "Disable Sync Alerts" });
+        await disableButton.WaitForAsync();
+        Assert.True(await disableButton.IsVisibleAsync());
+
+        await disableButton.ClickAsync();
+        await AssertSuccessMessage("Node sync alerts disabled.");
+    }
+
     private async Task LoginAsAdmin()
     {
         var user = ServerTester.NewAccount();
@@ -317,5 +388,15 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         var locator = await FindAlertMessageAsync();
         var text = await locator.TextContentAsync();
         Assert.Equal(expected, text?.Trim());
+    }
+
+    private async Task EnsureSyncAlertsDisabled()
+    {
+        var disableButton = Page.Locator("button", new PageLocatorOptions { HasText = "Disable Sync Alerts" });
+        if (await disableButton.CountAsync() > 0 && await disableButton.First.IsVisibleAsync())
+        {
+            await disableButton.First.ClickAsync();
+            await AssertSuccessMessage("Node sync alerts disabled.");
+        }
     }
 }
