@@ -1,5 +1,12 @@
+using System;
+using System.Linq;
+using System.Threading;
 using BTCPayServer.Abstractions.Form;
+using BTCPayServer.Abstractions.Constants;
 using BTCPayServer.Abstractions.Models;
+using BTCPayServer.Client;
+using BTCPayServer.Client.Models;
+using BTCPayServer.HostedServices;
 using BTCPayServer.Tests;
 using Microsoft.Playwright;
 using Xunit;
@@ -50,7 +57,7 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await Page.Locator("#NotificationEmailsRaw").FillAsync("test@test.com");
         await Page.Locator("button[type='submit']").ClickAsync();
         await AssertSuccessMessage("Check for https://example.com created successfully.");
-        var urlCell = Page.Locator("table tbody tr td a", new PageLocatorOptions { HasText = "https://example.com" });
+        var urlCell = Page.GetByRole(AriaRole.Link, new PageGetByRoleOptions { Name = "https://example.com", Exact = true });
         await urlCell.WaitForAsync();
         Assert.True(await urlCell.IsVisibleAsync());
     }
@@ -374,6 +381,90 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
         await AssertSuccessMessage("Node sync alerts disabled.");
     }
 
+    [Fact]
+    public async Task UptimeCheckerHistoryEntryCreatedAfterOneMinuteIntervalTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+
+        await EnsureHistoryEnabled();
+
+        var uniqueUrl = $"https://example.com/?uptime-test={Guid.NewGuid():N}";
+        await GoToUrl("/server/uptimechecker/create");
+        await Page.Locator("#Url").FillAsync(uniqueUrl);
+        await Page.Locator("#IntervalMinutes").FillAsync("1");
+        await Page.Locator("#NotificationEmailsRaw").FillAsync("test@test.com");
+        await Page.Locator("button[type='submit']").ClickAsync();
+        await AssertSuccessMessage($"Check for {uniqueUrl} created successfully.");
+
+        var historyEntryFound = false;
+        var deadline = DateTimeOffset.UtcNow.AddMinutes(2);
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            await GoToUrl($"/server/uptimechecker/history?count=10&urlFilter={Uri.EscapeDataString(uniqueUrl)}");
+            var row = Page.Locator("table tbody tr td a", new PageLocatorOptions { HasText = uniqueUrl });
+            if (await row.CountAsync() > 0)
+            {
+                historyEntryFound = true;
+                break;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+        }
+
+        Assert.True(historyEntryFound, "Expected at least one history entry for the check after one minute interval.");
+    }
+
+    [Fact]
+    public async Task UptimeCheckerSyncAlertSendsEmailWhenNodeBecomesUnsyncedTest()
+    {
+        await InitializePlaywright(ServerTester);
+        await LoginAsAdmin();
+
+        await ConfigureServerEmailSettingsAsync();
+        await EnsureSyncAlertsEnabled();
+
+        var syncAlertServiceType = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(a => a.GetTypes())
+            .First(t => t.FullName == "BTCPayServer.teamssUTXO.Plugins.UptimeChecker.Services.SyncAlertService");
+        var syncAlertService = ServerTester.PayTester.ServiceProvider.GetService(syncAlertServiceType)
+            ?? throw new InvalidOperationException("SyncAlertService could not be resolved from service provider.");
+
+        var runSyncCheck = syncAlertServiceType.GetMethod("RunSyncCheckIfDueAsync")
+            ?? throw new InvalidOperationException("RunSyncCheckIfDueAsync method not found on SyncAlertService.");
+
+        var dashboard = ServerTester.PayTester.GetService<NBXplorerDashboard>();
+        var btcNetwork = ServerTester.NetworkProvider.GetNetwork<BTCPayNetwork>("BTC");
+
+        var currentSummary = dashboard.Get("BTC");
+
+        dashboard.Publish(
+            btcNetwork,
+            currentSummary?.State ?? NBXplorerState.Ready,
+            currentSummary?.Status,
+            currentSummary?.MempoolInfo,
+            currentSummary?.Error);
+
+        await (Task)runSyncCheck.Invoke(syncAlertService, new object[] { CancellationToken.None })!;
+
+        var email = await ServerTester.AssertHasEmail(async () =>
+        {
+            dashboard.Publish(
+                btcNetwork,
+                NBXplorerState.Synching,
+                null,
+                currentSummary?.MempoolInfo,
+                "forced unsynced state for test");
+
+            await (Task)runSyncCheck.Invoke(syncAlertService, new object[] { CancellationToken.None })!;
+        });
+
+        Assert.Contains("[NODE UNSYNCED]", email.Subject, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("BTC", email.Subject, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("OUT OF SYNC", email.Html ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+    }
+
     private async Task LoginAsAdmin()
     {
         var user = ServerTester.NewAccount();
@@ -398,5 +489,48 @@ public class UptimeCheckerPluginUITestStandalone : PlaywrightBaseTest
             await disableButton.First.ClickAsync();
             await AssertSuccessMessage("Node sync alerts disabled.");
         }
+    }
+
+    private async Task EnsureSyncAlertsEnabled()
+    {
+        await GoToUrl("/server/uptimechecker/sync");
+        var enableButton = Page.Locator("button", new PageLocatorOptions { HasText = "Enable Sync Alerts" });
+        if (await enableButton.CountAsync() > 0 && await enableButton.First.IsVisibleAsync())
+        {
+            await enableButton.First.ClickAsync();
+            await AssertSuccessMessage("Node sync alerts enabled.");
+        }
+    }
+
+    private async Task EnsureHistoryEnabled()
+    {
+        await GoToUrl("/server/uptimechecker/history");
+        var toggle = Page.Locator("#enableHistoryToggle");
+        await toggle.WaitForAsync();
+
+        if (!await toggle.IsCheckedAsync())
+        {
+            await toggle.CheckAsync();
+            await Page.Locator("button[type='submit']").First.ClickAsync();
+            await AssertSuccessMessage("History settings saved successfully.");
+        }
+    }
+
+    private async Task ConfigureServerEmailSettingsAsync()
+    {
+        var admin = ServerTester.NewAccount();
+        await admin.GrantAccessAsync();
+        await admin.MakeAdmin();
+        var adminClient = await admin.CreateClient(Policies.Unrestricted);
+
+        await adminClient.UpdateServerEmailSettings(new ServerEmailSettingsData
+        {
+            Server = ServerTester.MailPitSettings.Hostname,
+            Port = ServerTester.MailPitSettings.SmtpPort,
+            From = "from@example.com",
+            Login = "login@example.com",
+            Password = "password",
+            DisableCertificateCheck = true
+        });
     }
 }
