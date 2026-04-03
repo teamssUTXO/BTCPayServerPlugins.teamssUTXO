@@ -12,11 +12,11 @@ namespace BTCPayServer.teamssUTXO.Plugins.UptimeChecker;
 
 public class UptimeCheckerPlugin : BaseBTCPayServerPlugin
 {
-    public override Version Version => new Version(1, 1, 0);
+    public override Version Version => new Version(1, 2, 0);
 
     public override IBTCPayServerPlugin.PluginDependency[] Dependencies { get; } =
     [
-        new() { Identifier = nameof(BTCPayServer), Condition = ">=2.1.0" }
+        new() { Identifier = nameof(BTCPayServer), Condition = ">=2.3.7" }
     ];
 
     public override void Execute(IServiceCollection services)
